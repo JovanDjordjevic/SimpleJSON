@@ -18,5 +18,10 @@
                 }
             }
         }
-    }
+    },
+    "field1" : 1,
+    "field1.5" : -1,
+    "field2" : 2.4,
+    "field3" : -0.2e5,
+    "field4" : null
 }
