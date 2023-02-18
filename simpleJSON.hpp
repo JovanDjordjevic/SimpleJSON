@@ -53,7 +53,12 @@ namespace simpleJSON {
             JSONString(const char* str);
             JSONString(const std::string& str);
 
+            friend bool operator==(const JSONString& lhs, const JSONString& rhs);
+            friend bool operator!=(const JSONString& lhs, const JSONString& rhs);
             friend bool operator<(const JSONString& lhs, const JSONString& rhs);
+            friend bool operator<=(const JSONString& lhs, const JSONString& rhs);
+            friend bool operator>(const JSONString& lhs, const JSONString& rhs);
+            friend bool operator>=(const JSONString& lhs, const JSONString& rhs);
 
             std::string getString() const;
             std::string toString() const;
@@ -67,6 +72,13 @@ namespace simpleJSON {
             JSONNumber();
             template <typename N>
             JSONNumber(const N& num);
+
+            friend bool operator==(const JSONNumber& lhs, const JSONNumber& rhs);
+            friend bool operator!=(const JSONNumber& lhs, const JSONNumber& rhs);
+            friend bool operator<(const JSONNumber& lhs, const JSONNumber& rhs);
+            friend bool operator<=(const JSONNumber& lhs, const JSONNumber& rhs);
+            friend bool operator>(const JSONNumber& lhs, const JSONNumber& rhs);
+            friend bool operator>=(const JSONNumber& lhs, const JSONNumber& rhs);
 
             JSONFloating getFloating() const;
             JSONUnsignedDecimal getUnsignedIntegral() const;
@@ -82,6 +94,9 @@ namespace simpleJSON {
             JSONBool(); // true by default
             JSONBool(bool val);
 
+            friend bool operator==(const JSONBool& lhs, const JSONBool& rhs);
+            friend bool operator!=(const JSONBool& lhs, const JSONBool& rhs);
+
             bool getBoolean() const;
             std::string toString() const;
 
@@ -94,6 +109,9 @@ namespace simpleJSON {
             JSONNull();
             JSONNull(const std::nullptr_t);
 
+            friend bool operator==(const JSONNull&, const JSONNull&);
+            friend bool operator!=(const JSONNull&, const JSONNull&);
+            
             std::string toString() const; 
     };
 
@@ -106,6 +124,9 @@ namespace simpleJSON {
 
             JSONObject& operator[](const size_t index);
             const JSONObject& operator[](const size_t index) const;
+
+            friend bool operator==(const JSONArray& lhs, const JSONArray& rhs);
+            friend bool operator!=(const JSONArray& lhs, const JSONArray& rhs);
             
             size_t size() const;
             void clear();
@@ -137,6 +158,13 @@ namespace simpleJSON {
 
             JSONObject& operator[](const JSONString& key);
             const JSONObject& operator[](const JSONString& key) const;
+
+            friend bool operator==(const JSONObject& lhs, const JSONObject& rhs);
+            friend bool operator!=(const JSONObject& lhs, const JSONObject& rhs);
+            friend bool operator<(const JSONObject& lhs, const JSONObject& rhs);
+            friend bool operator<=(const JSONObject& lhs, const JSONObject& rhs);
+            friend bool operator>(const JSONObject& lhs, const JSONObject& rhs);
+            friend bool operator>=(const JSONObject& lhs, const JSONObject& rhs);
 
             std::string toString() const;
 
@@ -199,8 +227,28 @@ namespace simpleJSON {
 
     // JSONString
 
+    bool operator==(const JSONString& lhs, const JSONString& rhs) { 
+        return lhs.value == rhs.value;
+    }
+
+    bool operator!=(const JSONString& lhs, const JSONString& rhs) { 
+        return !(lhs == rhs);
+    }
+
     bool operator<(const JSONString& lhs, const JSONString& rhs) { 
-        return lhs.value < rhs.value; 
+        return lhs.value < rhs.value;
+    }
+
+    bool operator<=(const JSONString& lhs, const JSONString& rhs) { 
+        return (lhs < rhs) || (lhs == rhs);
+    }
+
+    bool operator>(const JSONString& lhs, const JSONString& rhs) { 
+        return lhs.value > rhs.value;
+    }
+
+    bool operator>=(const JSONString& lhs, const JSONString& rhs) { 
+        return (lhs > rhs) || (lhs == rhs);
     }
 
     JSONString::JSONString() : value(std::string{}) { FUNCTRACE }
@@ -239,6 +287,104 @@ namespace simpleJSON {
         }
     }
 
+    bool operator==(const JSONNumber& lhs, const JSONNumber& rhs) {
+        return lhs.value == rhs.value;
+    }
+
+    bool operator!=(const JSONNumber& lhs, const JSONNumber& rhs) {
+        return !(lhs == rhs);
+    }
+
+    bool operator<(const JSONNumber& lhs, const JSONNumber& rhs) {
+        // // FIXME: find a better way to implement this method!!!
+        // // std::variant::operator< and operator> do not behave the way we need
+        auto& lhsValue = lhs.value;
+        auto& rhsValue = rhs.value;
+
+        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) < std::get<JSONFloating>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) < std::get<JSONUnsignedDecimal>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) < std::get<JSONSignedDecimal>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONUnsignedDecimal>(lhsValue) < std::get<JSONFloating>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
+            return std::get<JSONUnsignedDecimal>(lhsValue) < std::get<JSONUnsignedDecimal>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
+            // return std::get<JSONUnsignedDecimal>(lhsValue) < std::get<JSONSignedDecimal>(rhsValue);
+            throw JSONException("Comparison between signed and unsigned values not allowed");
+        }
+        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONSignedDecimal>(lhsValue) < std::get<JSONFloating>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
+            // return std::get<JSONSignedDecimal>(lhsValue) < std::get<JSONUnsignedDecimal>(rhsValue);
+            throw JSONException("Comparison between signed and unsigned values not allowed");
+        }
+        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
+            return std::get<JSONSignedDecimal>(lhsValue) < std::get<JSONSignedDecimal>(rhsValue);
+        }
+        else {
+            // should not get here
+            throw JSONException("Unexpected comparison on JSONNumber");
+        }
+    }
+
+    bool operator<=(const JSONNumber& lhs, const JSONNumber& rhs) {
+        return (lhs < rhs) || (lhs == rhs);
+    }
+
+    bool operator>(const JSONNumber& lhs, const JSONNumber& rhs) {
+        // // FIXME: find a better way to implement this method!!!
+        // // std::variant::operator< and operator> do not behave the way we need
+        auto& lhsValue = lhs.value;
+        auto& rhsValue = rhs.value;
+        
+        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) > std::get<JSONFloating>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) > std::get<JSONUnsignedDecimal>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) > std::get<JSONSignedDecimal>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONUnsignedDecimal>(lhsValue) > std::get<JSONFloating>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
+            return std::get<JSONUnsignedDecimal>(lhsValue) > std::get<JSONUnsignedDecimal>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
+            // return std::get<JSONUnsignedDecimal>(lhsValue) > std::get<JSONSignedDecimal>(rhsValue);
+            throw JSONException("Comparison between signed and unsigned values not allowed");
+        }
+        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONSignedDecimal>(lhsValue) > std::get<JSONFloating>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
+            // return std::get<JSONSignedDecimal>(lhsValue) > std::get<JSONUnsignedDecimal>(rhsValue);
+            throw JSONException("Comparison between signed and unsigned values not allowed");
+        }
+        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
+            return std::get<JSONSignedDecimal>(lhsValue) > std::get<JSONSignedDecimal>(rhsValue);
+        }
+        else {
+            // should not get here
+            throw JSONException("Unexpected comparison on JSONNumber");
+        }
+    }
+
+    bool operator>=(const JSONNumber& lhs, const JSONNumber& rhs) {
+        return (lhs > rhs) || (lhs == rhs);
+    }
+
     JSONFloating JSONNumber::getFloating() const {
         if (std::holds_alternative<JSONFloating>(value)) {
             return std::get<JSONFloating>(value);
@@ -264,7 +410,6 @@ namespace simpleJSON {
         else {
             throw JSONException("This JSONNumber does not contain a signed integral value");
         }
-
     }
 
     std::string JSONNumber::toString() const {
@@ -284,6 +429,14 @@ namespace simpleJSON {
     JSONBool::JSONBool() : value(false) { FUNCTRACE }
     JSONBool::JSONBool(bool val) : value(val) { FUNCTRACE }
 
+    bool operator==(const JSONBool& lhs, const JSONBool& rhs) {
+        return lhs.value == rhs.value;
+    }
+
+    bool operator!=(const JSONBool& lhs, const JSONBool& rhs) {
+        return !(lhs == rhs);
+    }
+
     bool JSONBool::getBoolean() const {
         return value;
     }
@@ -297,6 +450,14 @@ namespace simpleJSON {
     JSONNull::JSONNull() {};
     
     JSONNull::JSONNull(const std::nullptr_t) {}
+
+    bool operator==(const JSONNull&, const JSONNull&) {
+        return true;
+    }
+
+    bool operator!=(const JSONNull&, const JSONNull&) {
+        return false;
+    }
 
     std::string JSONNull::toString() const {
         return std::string("null");
@@ -328,6 +489,14 @@ namespace simpleJSON {
         else {
             return value.at(index);
         }
+    }
+
+    bool operator==(const JSONArray& lhs, const JSONArray& rhs) {
+        return lhs.value == rhs.value;
+    }
+
+    bool operator!=(const JSONArray& lhs, const JSONArray& rhs) {
+        return !(lhs == rhs);
     }
 
     size_t JSONArray::size() const {
@@ -413,6 +582,52 @@ namespace simpleJSON {
             throw JSONException("Operator[] failed, this JSONObject is not a map");
         }
     }   
+
+    bool operator==(const JSONObject& lhs, const JSONObject& rhs) {
+        return lhs.value == rhs.value;
+    }
+    
+    bool operator!=(const JSONObject& lhs, const JSONObject& rhs) {
+        return !(lhs == rhs);
+    }
+
+    bool operator<(const JSONObject& lhs, const JSONObject& rhs) {
+        auto& lhsValue = lhs.value;
+        auto& rhsValue = rhs.value;
+        
+        if (std::holds_alternative<JSONString>(lhsValue) && std::holds_alternative<JSONString>(rhsValue)) {
+            return std::get<JSONString>(lhsValue) < std::get<JSONString>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONNumber>(lhsValue) && std::holds_alternative<JSONNumber>(rhsValue)) {
+            return std::get<JSONNumber>(lhsValue) < std::get<JSONNumber>(rhsValue);
+        }
+        else {
+            throw JSONException("JSONObjects must hold JSONString or JSONNumber to use operator<");
+        }
+    }
+
+    bool operator<=(const JSONObject& lhs, const JSONObject& rhs) {
+        return (lhs < rhs) || (lhs == rhs);
+    }
+
+    bool operator>(const JSONObject& lhs, const JSONObject& rhs) {
+        auto& lhsValue = lhs.value;
+        auto& rhsValue = rhs.value;
+        
+        if (std::holds_alternative<JSONString>(lhsValue) && std::holds_alternative<JSONString>(rhsValue)) {
+            return std::get<JSONString>(lhsValue) > std::get<JSONString>(rhsValue);
+        }
+        else if (std::holds_alternative<JSONNumber>(lhsValue) && std::holds_alternative<JSONNumber>(rhsValue)) {
+            return std::get<JSONNumber>(lhsValue) > std::get<JSONNumber>(rhsValue);
+        }
+        else {
+            throw JSONException("JSONObjects must hold JSONString or JSONNumber to use operator>");
+        }
+    }
+
+    bool operator>=(const JSONObject& lhs, const JSONObject& rhs) {
+        return (lhs > rhs) || (lhs == rhs);
+    }
     
     std::string JSONObject::toString() const {
         if (std::holds_alternative<JSONString>(value)) {

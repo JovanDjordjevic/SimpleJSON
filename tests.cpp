@@ -34,6 +34,16 @@ void testJSONString() {
     str1 = someString2;                         assert(str1.getString() == someString2);
     str1 = std::string("stdString");            assert(str1.getString() == std::string("stdString"));
     str1 = str5;                                assert(str1.getString() == str5.getString());
+
+    // comparison
+    assert(str1 == "some std string");
+    assert(str1 == std::string("some std string"));
+    assert(str1 != JSONString("something else"));
+    assert(str1 != str4);
+    assert(str1 == str5);
+    assert(JSONString("aa") < JSONString("ab"));
+    assert(JSONString("ab") <= JSONString("ab") && JSONString("ab") >= JSONString("ab"));
+    assert(JSONString("ab") >= JSONString("aa"));
 }
 
 void testJSONNumber() {
@@ -60,6 +70,19 @@ void testJSONNumber() {
     num1 = f1;                                  assert(equals(num1.getFloating(), f1));
     num1 = num5;                                assert(num1.getUnsignedIntegral() == ud1);
     num1 = JSONNumber{345};                     assert(num1.getUnsignedIntegral() == 345);
+
+    // comparison
+    assert(num1 == 345);
+    assert(num1 != num2);
+    assert(JSONNumber(0.0001) == JSONNumber(0.0001));
+    assert(num1 != num2);
+    assert(num1 != -5);
+    assert(num1 < 346);
+    assert(num1 <= 346);
+    assert(num1 > JSONNumber{2});
+    assert(JSONNumber(99999) >= num1);
+    assert(JSONNumber(-0.e2) < JSONNumber(12));
+    assert(JSONNumber(123.324) >= JSONNumber(-33));
 }
 
 void testJSONBool() {
@@ -74,6 +97,12 @@ void testJSONBool() {
     // assignment
     b1 = true;                                  assert(b1.getBoolean() == true);
     b1 = JSONBool(false);                       assert(b1.getBoolean() == false);
+
+    // comparison
+    assert(b1 == false);
+    assert(b1 == JSONBool{});
+    assert(b1 != true);
+    assert(b1 != JSONBool(true));
 }
 
 void testJSONNull() {
@@ -83,6 +112,12 @@ void testJSONNull() {
     JSONNull n1;                                assert(n1.toString() == "null");
     JSONNull n2 = nullptr;                      assert(n2.toString() == "null");
     JSONNull n3 = NULL;                         assert(n3.toString() == "null");
+
+    // comparison
+    assert(JSONNull{} == JSONNull{});
+    assert(n1 == nullptr);
+    assert(n1 == NULL);
+    assert(!(n1 != n2));
 }
 
 void testJSONArray() {
@@ -136,6 +171,17 @@ void testJSONArray() {
     arr2[1] = false;
     arr2.append(-2);
     arr2[2] = JSONNull{};
+
+    // comparison
+    assert(arr2 == arr2);
+    assert(arr2 != arr3);
+        JSONArray tmp;
+        tmp.append(123);
+        tmp.append(false);
+        tmp.append(JSONNull{});
+    assert(arr2 == tmp);
+    assert(arr2 != JSONArray{});
+    assert(arr2[0] >= tmp[0]);
 }
 
 void testJSONObject() {
@@ -201,9 +247,23 @@ void testJSONObject() {
     obj["key4"]["subkey1"]["subkey2"] = JSONArray{};
     obj["key4"]["subkey1"]["subkey2"].append("array element");
     obj["key4"]["subkey1"]["subkey2"].append(22);
+    obj["newKey"] = obj["key4"]["subkey1"]["subkey2"];
     obj[std::string("key4")][JSONString("subkey1")]["subkey2"] = false;
+    obj["numberField"] = -0.244;
 
-    std::cout << obj.toString() << std::endl;
+    // comparison
+    assert(obj1 == obj23);
+    assert(obj1 != obj);
+    assert(JSONObject(JSONNumber(0)) == obj13);
+    assert(obj22 != obj5);
+    assert(obj[std::string("key4")][JSONString("subkey1")]["subkey2"] == false);
+        JSONArray tmpArr;
+        tmpArr.append("array element");
+        tmpArr.append(22);
+    assert(obj["newKey"] == tmpArr);
+    assert(obj5 == "some other json str");
+    assert(obj5 <= "some other json str X"); 
+    assert(obj["numberField"] > obj11);
 }
 
 void testStreamIO() {
@@ -230,6 +290,6 @@ int main () {
     testJSONObject();
 
     testStreamIO();
-
+    
     return 0;
 }
