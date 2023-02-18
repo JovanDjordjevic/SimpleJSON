@@ -11,8 +11,8 @@
 
 // #define DEBUG
 
-#ifdef DEBUG
-    #include <iostream>
+#ifdef DEBUG    
+#include <iostream>
     static unsigned totalTraces = 0u;
     #define FUNCTRACE { ++totalTraces; std::cout << "Calling: "  << __PRETTY_FUNCTION__ << std::endl << "total traces: " << totalTraces << std::endl; }
 #else
@@ -726,17 +726,37 @@ namespace internal {
 
         simpleJSON::JSONArray result;
 
+        bool expectingComma = false;
+        bool lastReadWasComma = false;
+
         while (stream) {
             c = stream.peek();
 
-            if (isspace(c) || c == ',') {
+            if (isspace(c)) {
                 stream.get(c);
                 continue;
             }
 
+            if (c == ',') {
+                if (expectingComma) {
+                    stream.get(c);
+                    expectingComma = false;
+                    lastReadWasComma = true;
+                    continue;
+                }
+                else {
+                    throw simpleJSON::JSONException("Unexpected comma when parsing array");
+                }
+            }
+
             if (c == ']') {
-                stream.get(c);
-                return result;
+                if (lastReadWasComma) {
+                    throw simpleJSON::JSONException("Trailing comma not allowed in array");
+                }
+                else {
+                    stream.get(c);
+                    return result;
+                }
             }
 
             NextJsonType nextType = detectNextType(c);
@@ -770,6 +790,9 @@ namespace internal {
                     throw simpleJSON::JSONException(errorMessage.c_str());
                     break;
             }
+
+            expectingComma = true;
+            lastReadWasComma = false;
         }
 
         // should not get here
