@@ -30,8 +30,7 @@ namespace simpleJSON {
     class JSONObject;
 
     using JSONFloating = double;
-    using JSONUnsignedDecimal = unsigned long long int;
-    using JSONSignedDecimal = long long int;
+    using JSONIntegral = long long int;
 
     JSONObject parseFromFile(const char* fileName);
     JSONObject parseFromString(std::string& jsonString);
@@ -70,8 +69,8 @@ namespace simpleJSON {
     class JSONNumber {
         public:
             JSONNumber();
-            template <typename N>
-            JSONNumber(const N& num);
+            template <typename T, typename = typename std::enable_if_t<std::is_floating_point_v<T> || std::is_integral_v<T>>>
+            JSONNumber(const T& num);
 
             friend bool operator==(const JSONNumber& lhs, const JSONNumber& rhs);
             friend bool operator!=(const JSONNumber& lhs, const JSONNumber& rhs);
@@ -81,12 +80,11 @@ namespace simpleJSON {
             friend bool operator>=(const JSONNumber& lhs, const JSONNumber& rhs);
 
             JSONFloating getFloating() const;
-            JSONUnsignedDecimal getUnsignedIntegral() const;
-            JSONSignedDecimal getSignedIntegral() const;
+            JSONIntegral getIntegral() const;
             std::string toString() const;
 
         private:
-            std::variant<JSONFloating, JSONUnsignedDecimal, JSONSignedDecimal> value;
+            std::variant<JSONFloating, JSONIntegral> value;
     };
 
     class JSONBool {
@@ -265,22 +263,17 @@ namespace simpleJSON {
 
     // JSONNumber
 
-    JSONNumber::JSONNumber() : value(JSONSignedDecimal(0)) { FUNCTRACE }
+    JSONNumber::JSONNumber() : value(JSONIntegral(0)) { FUNCTRACE }
     
-    template <typename N>
-    JSONNumber::JSONNumber(const N& num) {
+    template <typename T, typename>
+    JSONNumber::JSONNumber(const T& num) {
         FUNCTRACE 
 
-        if constexpr (std::is_floating_point_v<N>) {
+        if constexpr (std::is_floating_point_v<T>) {
 			value = JSONFloating(num);
 		}
-		else if constexpr (std::is_integral_v<N>) {
-			if (num < 0) {
-                value = JSONSignedDecimal(num);
-            }
-            else {
-                value = JSONUnsignedDecimal(num);
-            }
+		else if constexpr (std::is_integral_v<T>) {
+			value = JSONIntegral(num);
 		}
         else {
             throw JSONException("JSONNumber must be created with floating point or integral value");
@@ -297,38 +290,21 @@ namespace simpleJSON {
 
     bool operator<(const JSONNumber& lhs, const JSONNumber& rhs) {
         // // FIXME: find a better way to implement this method!!!
-        // // std::variant::operator< and operator> do not behave the way we need
+        // // std::variant::operator< and operator > do not behave the way we need
         auto& lhsValue = lhs.value;
         auto& rhsValue = rhs.value;
 
         if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
             return std::get<JSONFloating>(lhsValue) < std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) < std::get<JSONUnsignedDecimal>(rhsValue);
+        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) < std::get<JSONIntegral>(rhsValue);
         }
-        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) < std::get<JSONSignedDecimal>(rhsValue);
+        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONIntegral>(lhsValue) < std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONUnsignedDecimal>(lhsValue) < std::get<JSONFloating>(rhsValue);
-        }
-        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
-            return std::get<JSONUnsignedDecimal>(lhsValue) < std::get<JSONUnsignedDecimal>(rhsValue);
-        }
-        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
-            // return std::get<JSONUnsignedDecimal>(lhsValue) < std::get<JSONSignedDecimal>(rhsValue);
-            throw JSONException("Comparison between signed and unsigned values not allowed");
-        }
-        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONSignedDecimal>(lhsValue) < std::get<JSONFloating>(rhsValue);
-        }
-        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
-            // return std::get<JSONSignedDecimal>(lhsValue) < std::get<JSONUnsignedDecimal>(rhsValue);
-            throw JSONException("Comparison between signed and unsigned values not allowed");
-        }
-        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
-            return std::get<JSONSignedDecimal>(lhsValue) < std::get<JSONSignedDecimal>(rhsValue);
+        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+            return std::get<JSONIntegral>(lhsValue) < std::get<JSONIntegral>(rhsValue);
         }
         else {
             // should not get here
@@ -342,38 +318,21 @@ namespace simpleJSON {
 
     bool operator>(const JSONNumber& lhs, const JSONNumber& rhs) {
         // // FIXME: find a better way to implement this method!!!
-        // // std::variant::operator< and operator> do not behave the way we need
+        // // std::variant::operator< and operator > do not behave the way we need
         auto& lhsValue = lhs.value;
         auto& rhsValue = rhs.value;
         
         if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
             return std::get<JSONFloating>(lhsValue) > std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) > std::get<JSONUnsignedDecimal>(rhsValue);
+        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) > std::get<JSONIntegral>(rhsValue);
         }
-        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) > std::get<JSONSignedDecimal>(rhsValue);
+        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONIntegral>(lhsValue) > std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONUnsignedDecimal>(lhsValue) > std::get<JSONFloating>(rhsValue);
-        }
-        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
-            return std::get<JSONUnsignedDecimal>(lhsValue) > std::get<JSONUnsignedDecimal>(rhsValue);
-        }
-        else if (std::holds_alternative<JSONUnsignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
-            // return std::get<JSONUnsignedDecimal>(lhsValue) > std::get<JSONSignedDecimal>(rhsValue);
-            throw JSONException("Comparison between signed and unsigned values not allowed");
-        }
-        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONSignedDecimal>(lhsValue) > std::get<JSONFloating>(rhsValue);
-        }
-        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONUnsignedDecimal>(rhsValue)) { 
-            // return std::get<JSONSignedDecimal>(lhsValue) > std::get<JSONUnsignedDecimal>(rhsValue);
-            throw JSONException("Comparison between signed and unsigned values not allowed");
-        }
-        else if (std::holds_alternative<JSONSignedDecimal>(lhsValue) && std::holds_alternative<JSONSignedDecimal>(rhsValue)) { 
-            return std::get<JSONSignedDecimal>(lhsValue) > std::get<JSONSignedDecimal>(rhsValue);
+        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+            return std::get<JSONIntegral>(lhsValue) > std::get<JSONIntegral>(rhsValue);
         }
         else {
             // should not get here
@@ -394,18 +353,9 @@ namespace simpleJSON {
         }
     }
 
-    JSONUnsignedDecimal JSONNumber::getUnsignedIntegral() const {
-        if (std::holds_alternative<JSONUnsignedDecimal>(value)) {
-            return std::get<JSONUnsignedDecimal>(value);
-        }
-        else {
-            throw JSONException("This JSONNumber does not contain an unsigned integral value");
-        }
-    }
-
-    JSONSignedDecimal JSONNumber::getSignedIntegral() const {
-        if (std::holds_alternative<JSONSignedDecimal>(value)) {
-            return std::get<JSONSignedDecimal>(value);
+    JSONIntegral JSONNumber::getIntegral() const {
+        if (std::holds_alternative<JSONIntegral>(value)) {
+            return std::get<JSONIntegral>(value);
         }
         else {
             throw JSONException("This JSONNumber does not contain a signed integral value");
@@ -847,10 +797,9 @@ namespace internal {
 
             return simpleJSON::JSONNumber(result);
         }
-
-        // signed integer type
-        if (numberAsString[0] == '-') {
-            simpleJSON::JSONSignedDecimal result = std::strtoll(numberAsString.c_str(), &afterEnd, 10);
+        // integral type
+        else {
+            simpleJSON::JSONIntegral result = std::strtoll(numberAsString.c_str(), &afterEnd, 10);
             
             if (*afterEnd != '\0') {
                 std::string errorMessage = "Error while parsing number, invalid signed integer";
@@ -859,19 +808,6 @@ namespace internal {
 
             return simpleJSON::JSONNumber(result);
         }
-        // unsigned integer type
-        else {
-            simpleJSON::JSONUnsignedDecimal result = std::strtoull(numberAsString.c_str(), &afterEnd, 10);
-            
-            if (*afterEnd != '\0') {
-                std::string errorMessage = "Error while parsing number, invalid unsigned integer";
-                throw simpleJSON::JSONException(errorMessage.c_str());
-            }
-
-            return simpleJSON::JSONNumber(result);
-        }
-
-        return simpleJSON::JSONNumber(simpleJSON::JSONUnsignedDecimal(1));
     }
     
     simpleJSON::JSONBool parseBool__internal(std::istream& stream) {

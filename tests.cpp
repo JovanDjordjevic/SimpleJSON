@@ -50,26 +50,26 @@ void testJSONNumber() {
     using namespace simpleJSON;
 
     JSONFloating f1 = 0.22e13;
-    JSONUnsignedDecimal ud1 = 123;
-    JSONSignedDecimal sd1 = -123;
+    JSONIntegral ud1 = 123;
+    JSONIntegral sd1 = -123;
 
     // constructors
-    JSONNumber num1;                            assert(num1.getSignedIntegral() == 0);
+    JSONNumber num1;                            assert(num1.getIntegral() == 0);
     JSONNumber num2(0.123);                     assert(equals(num2.getFloating(), 0.123));
     JSONNumber num3(f1);                        assert(equals(num3.getFloating(), f1));
-    JSONNumber num4(1234151245);                assert(num4.getUnsignedIntegral() == 1234151245);
-    JSONNumber num5(ud1);                       assert(num5.getUnsignedIntegral() == ud1);
-    JSONNumber num6(-3514);                     assert(num6.getSignedIntegral() == -3514);
-    JSONNumber num7(sd1);                       assert(num7.getSignedIntegral() == sd1);
-    JSONNumber num8(num1);                      assert(num8.getSignedIntegral() == 0);
+    JSONNumber num4(1234151245);                assert(num4.getIntegral() == 1234151245);
+    JSONNumber num5(ud1);                       assert(num5.getIntegral() == ud1);
+    JSONNumber num6(-3514);                     assert(num6.getIntegral() == -3514);
+    JSONNumber num7(sd1);                       assert(num7.getIntegral() == sd1);
+    JSONNumber num8(num1);                      assert(num8.getIntegral() == 0);
     JSONNumber num9{JSONNumber(-0.14e23)};      assert(equals(num9.getFloating(), -0.14e23));
 
     // assignment
-    num1 = 5;                                   assert(num1.getUnsignedIntegral() == 5);
-    num1 = -5;                                  assert(num1.getSignedIntegral() == -5);
+    num1 = 5;                                   assert(num1.getIntegral() == 5);
+    num1 = -5;                                  assert(num1.getIntegral() == -5);
     num1 = f1;                                  assert(equals(num1.getFloating(), f1));
-    num1 = num5;                                assert(num1.getUnsignedIntegral() == ud1);
-    num1 = JSONNumber{345};                     assert(num1.getUnsignedIntegral() == 345);
+    num1 = num5;                                assert(num1.getIntegral() == ud1);
+    num1 = JSONNumber{345};                     assert(num1.getIntegral() == 345);
 
     // comparison
     assert(num1 == 345);
@@ -127,8 +127,8 @@ void testJSONArray() {
     std::string someString2("some std string");
     JSONString jsonStr1("json str");
     JSONFloating f1 = 0.22e13;
-    JSONUnsignedDecimal ud1 = 123;
-    JSONSignedDecimal sd1 = -123;
+    JSONIntegral ud1 = 123;
+    JSONIntegral sd1 = -123;
 
     // constructors
     JSONArray arr;                                              assert(arr.size() == 0);
@@ -191,8 +191,8 @@ void testJSONObject() {
     std::string someString2("some std string");
     JSONString jsonStr1("some json str");
     JSONFloating f1 = 0.22e13;
-    JSONUnsignedDecimal ud1 = 123;
-    JSONSignedDecimal sd1 = -123;
+    JSONIntegral ud1 = 123;
+    JSONIntegral sd1 = -123;
     JSONNumber jsonNum1(-2);
     JSONBool jsonBool1(true);
     JSONArray jsonArr1;
