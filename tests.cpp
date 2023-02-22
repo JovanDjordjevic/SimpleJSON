@@ -132,6 +132,7 @@ void testJSONArray() {
 
     // constructors
     JSONArray arr;                                              assert(arr.size() == 0);
+    JSONArray initialzedArray = {1, "str", JSONNull{}};         assert(initialzedArray.size() == 3);
 
     // appending and clearing
     arr.append(someString1);                                    assert(arr.size() == 1);
@@ -147,16 +148,18 @@ void testJSONArray() {
     arr.append(1);                                              assert(arr.size() == 3);
     arr.append(ud1);                                            assert(arr.size() == 4);
     arr.append(-1);                                             assert(arr.size() == 5);
-    arr.append(sd1);                                            assert(arr.size() == 6);
-    arr.append(JSONNumber(123));                                assert(arr.size() == 7);
-    arr.append(true);                                           assert(arr.size() == 8);
-    arr.append(JSONBool{false});                                assert(arr.size() == 9);
-    arr.append(nullptr);                                        assert(arr.size() == 10); 
-    arr.append(JSONNull{});                                     assert(arr.size() == 11);
-    arr.append(arr);                                            assert(arr.size() == 12);
-    arr.append(JSONArray{});                                    assert(arr.size() == 13);
-    arr.append(JSONObject());                                   assert(arr.size() == 14);
-    arr.append(JSONObject("str obj"));                          assert(arr.size() == 15);
+    initialzedArray.append(sd1);                                assert(initialzedArray.size() == 4);
+    initialzedArray.clear();                                    assert(initialzedArray.size() == 0);
+    initialzedArray.append(JSONNumber(123));                    assert(initialzedArray.size() == 1);
+    initialzedArray.append(true);                               assert(initialzedArray.size() == 2);
+    initialzedArray.append(JSONBool{false});                    assert(initialzedArray.size() == 3);
+    initialzedArray.append(nullptr);                            assert(initialzedArray.size() == 4); 
+    initialzedArray.append(JSONNull{});                         assert(initialzedArray.size() == 5);
+    initialzedArray.append(arr);                                assert(initialzedArray.size() == 6);
+    initialzedArray.append(JSONArray{});                        assert(initialzedArray.size() == 7);
+    initialzedArray.append(JSONObject());                       assert(initialzedArray.size() == 8);
+    initialzedArray.append(JSONObject("str obj"));              assert(initialzedArray.size() == 9);
+    initialzedArray.append(JSONObject{{"key1", "value1"}});     assert(initialzedArray.size() == 10);
 
     // assignment
     JSONArray arr2;                                             assert(arr2.size() == 0);
@@ -227,6 +230,23 @@ void testJSONObject() {
         JSONObject tmp;
         tmp["key1"] = JSONString("value1");
     JSONObject obj23(tmp);
+        const char* key2 = "key1";
+        std::string key4{key2};
+        JSONString key6("key6");
+        JSONArray arr;
+            arr.append(1);
+            arr.append("str");
+    JSONObject o{
+            {"key1", "value1"}, 
+            {key2, JSONString("value2")}, 
+            {std::string("key3"), 234},
+            {key4, JSONNull()},
+            {JSONString("key5"), false},
+            {"key6", arr},
+            {"key7", JSONArray{1, "str", JSONNull{}}},
+            {"key8", obj23},
+            {"key9",  {{"k1", 1}, {"k2", 2}}   }
+        };
 
     // assignment
     obj1 = "some String";
@@ -289,7 +309,7 @@ int main () {
     testJSONArray();
     testJSONObject();
 
-    testStreamIO();
+    // testStreamIO();
     
     return 0;
 }

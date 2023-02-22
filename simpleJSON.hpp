@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <fstream>
+#include <initializer_list>
 #include <map>
 #include <sstream>
 #include <string>
@@ -116,6 +117,7 @@ namespace simpleJSON {
     class JSONArray {
         public:
             JSONArray();
+            JSONArray(std::initializer_list<JSONObject> list);
 
             template <typename T>
             void append(T&& arg);
@@ -148,6 +150,7 @@ namespace simpleJSON {
             JSONObject(std::nullptr_t);
             JSONObject(JSONNull n);
             JSONObject(const JSONArray& arr);
+            JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list);
 
             template <typename T>
             void append(T&& arg);
@@ -416,6 +419,7 @@ namespace simpleJSON {
     // JSONArray
 
     JSONArray::JSONArray() : value(std::vector<JSONObject>{}) { FUNCTRACE }
+    JSONArray::JSONArray(std::initializer_list<JSONObject> list) : value(list) { FUNCTRACE }
 
     template <typename T>
     void JSONArray::append(T&& arg) {
@@ -487,6 +491,7 @@ namespace simpleJSON {
     JSONObject::JSONObject(std::nullptr_t) : value(JSONNull{}) { FUNCTRACE }
     JSONObject::JSONObject(JSONNull n) : value(n) { FUNCTRACE }
     JSONObject::JSONObject(const JSONArray& arr) : value(arr) { FUNCTRACE }
+    JSONObject::JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list) : value(list) { FUNCTRACE }
 
     template <typename T>
     void JSONObject::append(T&& arg) {
