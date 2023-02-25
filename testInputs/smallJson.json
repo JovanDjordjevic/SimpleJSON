@@ -23,5 +23,6 @@
     "field1.5" : -1,
     "field2" : 2.4,
     "field3" : -0.2e5,
-    "field4" : null
+    "field4" : null,
+    "field5" : -0.23e+2
 }

@@ -793,32 +793,21 @@ namespace internal {
         char c = stream.peek();
         std::string numberAsString;
 
-        while (isdigit(c) || c == '.' || c == '-' || c == 'e' || c == 'E') {
+        short dotCount = 0;
+        short eCount = 0;
+
+        while (isdigit(c) || c == '.' || c == '-' || c == 'e' || c == 'E' || c == '+') {
+            if (c == '.') {
+                ++dotCount;
+            }
+            else if (c == 'e' || c == 'E') {
+                ++eCount;
+            }
+
             stream.get(c);
             numberAsString += c;
 
             c = stream.peek();
-        }
-
-        short dotCount = 0;
-        short eCount = 0;
-        short minusCount = 0;
-
-        for (char c : numberAsString) {
-            switch (c) {
-                case '-':
-                    ++minusCount;
-                    break;
-                case 'e': [[fallthrough]];
-                case 'E':
-                    ++eCount;
-                    break;
-                case '.':
-                    ++dotCount;
-                    break;
-                default:
-                    break;
-            }
         }
         
         if (dotCount != 0 || eCount != 0) {
