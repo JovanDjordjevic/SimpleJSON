@@ -309,7 +309,7 @@ int main () {
     testJSONArray();
     testJSONObject();
 
-    // testStreamIO();
-    
+    testStreamIO();
+
     return 0;
 }

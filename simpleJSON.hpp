@@ -30,7 +30,9 @@ namespace simpleJSON {
     class JSONArray;
     class JSONObject;
 
-    using JSONFloating = double;
+    // When changing what types are used as JSONFloating and JSONIntegral, also change how they are parsed
+    // in strToJSONFloating__internal and strToJSONIntegral__internal
+    using JSONFloating = long double;
     using JSONIntegral = long long int;
 
     JSONObject parseFromFile(const char* fileName);
@@ -70,8 +72,8 @@ namespace simpleJSON {
     class JSONNumber {
         public:
             JSONNumber();
-            template <typename T, typename = typename std::enable_if_t<std::is_floating_point_v<T> || std::is_integral_v<T>>>
-            JSONNumber(const T& num);
+            template <typename N, typename = typename std::enable_if_t<std::is_floating_point_v<N> || std::is_integral_v<N>>>
+            JSONNumber(const N& num);
 
             friend bool operator==(const JSONNumber& lhs, const JSONNumber& rhs);
             friend bool operator!=(const JSONNumber& lhs, const JSONNumber& rhs);
@@ -90,8 +92,8 @@ namespace simpleJSON {
 
     class JSONBool {
         public:
-            JSONBool(); // true by default
-            JSONBool(bool val);
+            JSONBool();
+            JSONBool(const bool val);
 
             friend bool operator==(const JSONBool& lhs, const JSONBool& rhs);
             friend bool operator!=(const JSONBool& lhs, const JSONBool& rhs);
@@ -117,7 +119,7 @@ namespace simpleJSON {
     class JSONArray {
         public:
             JSONArray();
-            JSONArray(std::initializer_list<JSONObject> list);
+            JSONArray(const std::initializer_list<JSONObject> list);
 
             template <typename T>
             void append(T&& arg);
@@ -142,20 +144,20 @@ namespace simpleJSON {
             JSONObject(const char* str);
             JSONObject(const std::string& str);
             JSONObject(const JSONString& str);
-            template <typename N, typename = std::enable_if<std::is_floating_point_v<N> || std::is_integral_v<N>>>
-            JSONObject(N num);
-            JSONObject(JSONNumber num);
-            JSONObject(bool b);
-            JSONObject(JSONBool b);
-            JSONObject(std::nullptr_t);
-            JSONObject(JSONNull n);
+            template <typename N, typename = typename std::enable_if_t<std::is_floating_point_v<N> || std::is_integral_v<N>>>
+            JSONObject(const N& num);
+            JSONObject(const JSONNumber& num);
+            JSONObject(const bool b);
+            JSONObject(const JSONBool b);
+            JSONObject(const std::nullptr_t);
+            JSONObject(const JSONNull n);
             JSONObject(const JSONArray& arr);
             JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list);
 
             template <typename T>
             void append(T&& arg);
 
-            void removeField(JSONString key);
+            void removeField(const JSONString& key);
 
             JSONObject& operator[](const JSONString& key);
             const JSONObject& operator[](const JSONString& key) const;
@@ -191,7 +193,12 @@ namespace internal {
 
     simpleJSON::JSONObject beginParseFromStream__internal(std::istream& stream);
 
-    NextJsonType detectNextType(char nextCharInStream);
+    NextJsonType detectNextType__internal(char nextCharInStream);
+
+    char peekNextNonSpaceCharacter__internal(std::istream& stream);
+
+    simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str);
+    simpleJSON::JSONIntegral strToJSONIntegral__internal(const std::string& str);
 
     simpleJSON::JSONString parseString__internal(std::istream& stream);
     simpleJSON::JSONNumber parseNumber__internal(std::istream& stream);
@@ -268,14 +275,14 @@ namespace simpleJSON {
 
     JSONNumber::JSONNumber() : value(JSONIntegral(0)) { FUNCTRACE }
     
-    template <typename T, typename>
-    JSONNumber::JSONNumber(const T& num) {
+    template <typename N, typename>
+    JSONNumber::JSONNumber(const N& num) {
         FUNCTRACE 
 
-        if constexpr (std::is_floating_point_v<T>) {
+        if constexpr (std::is_floating_point_v<N>) {
 			value = JSONFloating(num);
 		}
-		else if constexpr (std::is_integral_v<T>) {
+		else if constexpr (std::is_integral_v<N>) {
 			value = JSONIntegral(num);
 		}
         else {
@@ -292,8 +299,8 @@ namespace simpleJSON {
     }
 
     bool operator<(const JSONNumber& lhs, const JSONNumber& rhs) {
-        // // FIXME: find a better way to implement this method!!!
-        // // std::variant::operator< and operator > do not behave the way we need
+        // FIXME: find a better way to implement this method!!!
+        // std::variant::operator< and operator > do not behave the way we need
         auto& lhsValue = lhs.value;
         auto& rhsValue = rhs.value;
 
@@ -320,8 +327,8 @@ namespace simpleJSON {
     }
 
     bool operator>(const JSONNumber& lhs, const JSONNumber& rhs) {
-        // // FIXME: find a better way to implement this method!!!
-        // // std::variant::operator< and operator > do not behave the way we need
+        // FIXME: find a better way to implement this method!!!
+        // std::variant::operator< and operator > do not behave the way we need
         auto& lhsValue = lhs.value;
         auto& rhsValue = rhs.value;
         
@@ -419,12 +426,13 @@ namespace simpleJSON {
     // JSONArray
 
     JSONArray::JSONArray() : value(std::vector<JSONObject>{}) { FUNCTRACE }
-    JSONArray::JSONArray(std::initializer_list<JSONObject> list) : value(list) { FUNCTRACE }
+    JSONArray::JSONArray(const std::initializer_list<JSONObject> list) : value(list) { FUNCTRACE }
 
     template <typename T>
     void JSONArray::append(T&& arg) {
         FUNCTRACE
         value.emplace_back(std::forward<T>(arg));
+        return;
     }
 
     JSONObject& JSONArray::operator[](const size_t index) {
@@ -459,6 +467,7 @@ namespace simpleJSON {
     
     void JSONArray::clear() {
         value.clear();
+        return;
     }
 
     std::string JSONArray::toString() const {
@@ -484,27 +493,28 @@ namespace simpleJSON {
     JSONObject::JSONObject(const std::string& str) : value(JSONString(str)) { FUNCTRACE }
     JSONObject::JSONObject(const JSONString& str) : value(str) { FUNCTRACE }
     template <typename N, typename>
-    JSONObject::JSONObject(N num) : value(JSONNumber(num)) { FUNCTRACE }
-    JSONObject::JSONObject(JSONNumber num) : value(num) { FUNCTRACE }
-    JSONObject::JSONObject(bool b) : value(JSONBool(b)) { FUNCTRACE }
-    JSONObject::JSONObject(JSONBool b) : value(b) { FUNCTRACE }
-    JSONObject::JSONObject(std::nullptr_t) : value(JSONNull{}) { FUNCTRACE }
-    JSONObject::JSONObject(JSONNull n) : value(n) { FUNCTRACE }
+    JSONObject::JSONObject(const N& num) : value(JSONNumber(num)) { FUNCTRACE }
+    JSONObject::JSONObject(const JSONNumber& num) : value(num) { FUNCTRACE }
+    JSONObject::JSONObject(const bool b) : value(JSONBool(b)) { FUNCTRACE }
+    JSONObject::JSONObject(const JSONBool b) : value(b) { FUNCTRACE }
+    JSONObject::JSONObject(const std::nullptr_t) : value(JSONNull{}) { FUNCTRACE }
+    JSONObject::JSONObject(const JSONNull n) : value(n) { FUNCTRACE }
     JSONObject::JSONObject(const JSONArray& arr) : value(arr) { FUNCTRACE }
     JSONObject::JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list) : value(list) { FUNCTRACE }
 
     template <typename T>
     void JSONObject::append(T&& arg) {
         if (std::holds_alternative<JSONArray>(value)) {
-            auto& map = std::get<JSONArray>(value);
-            map.append(std::forward<T>(arg));
+            auto& arr = std::get<JSONArray>(value);
+            arr.append(std::forward<T>(arg));
         }
         else {
             throw JSONException("Cannot append. Current object is not an array");
         }
+        return;
     }
 
-    void JSONObject::removeField(JSONString key) {
+    void JSONObject::removeField(const JSONString& key) {
         if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
             auto& map = std::get<std::map<JSONString, JSONObject>>(value);
 
@@ -516,6 +526,7 @@ namespace simpleJSON {
         else {
             throw JSONException("Removing field failed, this JSONObject is not a map");
         }
+        return;
     }
 
     JSONObject& JSONObject::operator[](const JSONString& key) {
@@ -630,15 +641,10 @@ namespace internal {
         FUNCTRACE
 
         simpleJSON::JSONObject result;
+        
+        char next = peekNextNonSpaceCharacter__internal(stream);
 
-        char next = stream.peek();
-
-        if (isspace(next)) {
-            stream.get();
-            next = stream.peek();
-        }
-
-        internal::NextJsonType nextType = internal::detectNextType(next);
+        internal::NextJsonType nextType = internal::detectNextType__internal(next);
 
         switch (nextType) {
             case internal::NextJsonType::JSON_STRING:
@@ -663,31 +669,22 @@ namespace internal {
                 // next read will fail and function will end
                 break;
             default: 
-                std::string errorMessage = "Error while parsing object, unexpected next character '";
-                errorMessage += next;
-                errorMessage += '\''; 
+                std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'";
                 throw simpleJSON::JSONException(errorMessage.c_str());
                 break;
         }
    
-        next = stream.peek();
-
-        if (isspace(next)) {
-            stream.get();
-            next = stream.peek();
-        }
+        next = peekNextNonSpaceCharacter__internal(stream);
 
         if (next != std::istream::traits_type::eof()) {
-            std::string errorMessage = "Error after reading a valid json object. Expected EOF but found '";
-            errorMessage += next;
-            errorMessage += '\''; 
+            std::string errorMessage = "Error after reading a valid json object. Expected EOF but found '" + std::string{next} + "'"; 
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
         
         return result;
     }
 
-    NextJsonType detectNextType(char nextCharInStream) {
+    NextJsonType detectNextType__internal(char nextCharInStream) {
         switch (nextCharInStream) {
             case '"':
                 return NextJsonType::JSON_STRING;
@@ -719,6 +716,41 @@ namespace internal {
         }
     }
 
+    char peekNextNonSpaceCharacter__internal(std::istream& stream) {
+        char next = stream.peek();
+        
+        while (isspace(next)) {
+            stream.get();
+            next = stream.peek();
+        }
+
+        return next;
+    }
+
+    simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str) {
+        char* afterEnd;
+        simpleJSON::JSONFloating result = std::strtold(str.c_str(), &afterEnd);
+
+        if (*afterEnd != '\0') {
+            std::string errorMessage = "Error while parsing number, invalid floating point number";
+            throw simpleJSON::JSONException(errorMessage.c_str());
+        }
+
+        return result;
+    }
+
+    simpleJSON::JSONIntegral strToJSONIntegral__internal(const std::string& str) {
+        char* afterEnd;
+        simpleJSON::JSONIntegral result = std::strtoll(str.c_str(), &afterEnd, 10);
+            
+        if (*afterEnd != '\0') {
+            std::string errorMessage = "Error while parsing number, invalid signed integer";
+            throw simpleJSON::JSONException(errorMessage.c_str());
+        }
+
+        return result;
+    }
+
     simpleJSON::JSONString parseString__internal(std::istream& stream) {
         FUNCTRACE
 
@@ -727,7 +759,7 @@ namespace internal {
 
         if (currentChar != '"') {
             std::string errorMessage = "Error while parsing string, expected '\"'";
-                throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
         std::string result;
@@ -789,29 +821,11 @@ namespace internal {
             }
         }
         
-        char* afterEnd;
-
-        // flating type
         if (dotCount != 0 || eCount != 0) {
-            simpleJSON::JSONFloating result = std::strtod(numberAsString.c_str(), &afterEnd);
-
-            if (*afterEnd != '\0') {
-                std::string errorMessage = "Error while parsing number, invalid floating point number";
-                throw simpleJSON::JSONException(errorMessage.c_str());
-            }
-
-            return simpleJSON::JSONNumber(result);
+            return simpleJSON::JSONNumber{internal::strToJSONFloating__internal(numberAsString)};
         }
-        // integral type
         else {
-            simpleJSON::JSONIntegral result = std::strtoll(numberAsString.c_str(), &afterEnd, 10);
-            
-            if (*afterEnd != '\0') {
-                std::string errorMessage = "Error while parsing number, invalid signed integer";
-                throw simpleJSON::JSONException(errorMessage.c_str());
-            }
-
-            return simpleJSON::JSONNumber(result);
+            return simpleJSON::JSONNumber{internal::strToJSONIntegral__internal(numberAsString)};
         }
     }
     
@@ -840,9 +854,7 @@ namespace internal {
             } 
         }
 
-        std::string errorMessage = "Error while parsing bool, expected \"true\" or \"false\", got \"";
-        errorMessage += out;
-        errorMessage += "\"";
+        std::string errorMessage = "Error while parsing bool, expected \"true\" or \"false\", got \"" + out + "\"";
         throw simpleJSON::JSONException(errorMessage.c_str());
     }
     
@@ -858,9 +870,7 @@ namespace internal {
         std::string out = {c1, c2, c3, c4};
 
         if (out != "null") {
-            std::string errorMessage = "Error while parsing null, expected \"null\", got \"";
-            errorMessage += out; 
-            errorMessage += "\"";
+            std::string errorMessage = "Error while parsing null, expected \"null\", got \"" + out + "\"";
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
@@ -874,9 +884,7 @@ namespace internal {
         stream.get(c);
 
         if (c != '[') {
-            std::string errorMessage = "Error while parsing array, expected '[', got '";
-            errorMessage += c;
-            errorMessage += "'";
+            std::string errorMessage = "Error while parsing array, expected '[', got '" + std::string{c} + "'";
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
@@ -915,7 +923,7 @@ namespace internal {
                 }
             }
 
-            NextJsonType nextType = detectNextType(c);
+            NextJsonType nextType = detectNextType__internal(c);
             
             switch (nextType) {
                 case NextJsonType::JSON_STRING: 
@@ -940,9 +948,7 @@ namespace internal {
                     // next read will fail and function will end
                     break;
                 default: 
-                    std::string errorMessage = "Error while parsing array, unexpected next character '";
-                    errorMessage += c;
-                    errorMessage += '\''; 
+                    std::string errorMessage = "Error while parsing array, unexpected next character '" + std::string{c} + "'"; 
                     throw simpleJSON::JSONException(errorMessage.c_str());
                     break;
             }
@@ -963,21 +969,14 @@ namespace internal {
         stream.get(c);
 
         if (c != '{') {
-            std::string errorMessage = "Error while parsing object, expected '{', got '";
-            errorMessage += c;
-            errorMessage += "'";
+            std::string errorMessage = "Error while parsing object, expected '{', got '" + std::string{c} + "'";
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
         simpleJSON::JSONObject result;
 
         while (stream) {
-            char next = stream.peek();
-
-            while (isspace(next)) {
-                stream.get();
-                next = stream.peek();
-            }
+            char next = peekNextNonSpaceCharacter__internal(stream);
 
             // empty object
             if (next == '}') {
@@ -987,44 +986,29 @@ namespace internal {
 
             // must read string as map key if object is not empty
             if (next != '"') {
-                std::string errorMessage = "Error while parsing object, expected '\"', got '";
-                errorMessage += next;
-                errorMessage += "'";
+                std::string errorMessage = "Error while parsing object, expected '\"', got '" + std::string{next} + "'";
                 throw simpleJSON::JSONException(errorMessage.c_str());
             }
 
             simpleJSON::JSONString key = parseString__internal(stream);
 
             // possible white space between map key and :
-            next = stream.peek();
-            while (isspace(next)) {
-                stream.get();
-                next = stream.peek();
-            }
-
+            next = peekNextNonSpaceCharacter__internal(stream);
             stream.get(c);
 
             // must read separator
             if (c != ':') {
-                std::string errorMessage = "Error while parsing object, expected ':', got '";
-                errorMessage += c;
-                errorMessage += "'";
+                std::string errorMessage = "Error while parsing object, expected ':', got '" + std::string{c} + "'";
                 throw simpleJSON::JSONException(errorMessage.c_str());
             }
 
             // possible white space between : and map value
-            next = stream.peek();
-            while (isspace(next)) {
-                stream.get();
-                next = stream.peek();
-            }
+            next = peekNextNonSpaceCharacter__internal(stream);
 
-            NextJsonType nextType = detectNextType(next);
+            NextJsonType nextType = detectNextType__internal(next);
             
             switch (nextType) {
                 case NextJsonType::JSON_STRING:
-                    // auto val = parseString__internal(stream);
-                    // result[key] = val;
                     result[key] = parseString__internal(stream);
                     break;
                 case NextJsonType::JSON_NUMBER:
@@ -1046,20 +1030,13 @@ namespace internal {
                     // next read will fail and function will end
                     break;
                 default: 
-                    std::string errorMessage = "Error while parsing object, unexpected next character '";
-                    errorMessage += next;
-                    errorMessage += '\''; 
+                    std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'"; 
                     throw simpleJSON::JSONException(errorMessage.c_str());
                     break;
             }
 
             //  possible white space between map value and , or }
-            next = stream.peek();
-            while (isspace(next)) {
-                stream.get();
-                next = stream.peek();
-            }
-
+            next = peekNextNonSpaceCharacter__internal(stream);
             stream.get(c);
             
             if (c == ',') {
@@ -1069,9 +1046,7 @@ namespace internal {
                 break;
             }
             else {
-                std::string errorMessage = "Error while parsing object, unexpected next character '";
-                errorMessage += c;
-                errorMessage += "'"; 
+                std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{c} + "'"; 
                 throw simpleJSON::JSONException(errorMessage.c_str());
             }
         }
