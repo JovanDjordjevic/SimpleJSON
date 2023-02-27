@@ -273,6 +273,9 @@ void testJSONObject() {
     obj["newKey"] = obj["key4"]["subkey1"]["subkey2"];
     obj[std::string("key4")][JSONString("subkey1")]["subkey2"] = false;
     obj["numberField"] = -0.244;
+    o["key6"].pop();                                                        assert(o["key6"].size() == 1);
+    o["key6"][0] = "str";                                                   assert(o["key6"].size() == 1 && o["key6"][0] == "str");  
+    o["key6"].clear();                                                      assert(o["key6"].size() == 0);  
 
     // comparison
     assert(obj1 == obj23);

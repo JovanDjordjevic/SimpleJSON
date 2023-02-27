@@ -158,6 +158,12 @@ namespace simpleJSON {
 
             template <typename T>
             void append(T&& arg);
+            void pop();
+            size_t size() const;
+            void clear();
+
+            JSONObject& operator[](const size_t index);
+            const JSONObject& operator[](const size_t index) const;
 
             void removeField(const JSONString& key);
 
@@ -520,6 +526,57 @@ namespace simpleJSON {
             throw JSONException("Cannot append. Current object is not an array");
         }
         return;
+    }
+
+    void JSONObject::pop() {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            arr.pop();
+            return;
+        }
+        else {
+            throw JSONException("Cannot pop. Current JSONObject does not hold an array");
+        }
+    }
+
+    JSONObject& JSONObject::operator[](const size_t index) {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr[index];
+        }
+        else {
+            throw JSONException("Operator[] failed, this JSONObject is not an array");
+        }
+    }
+
+    const JSONObject& JSONObject::operator[](const size_t index) const {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr[index];
+        }
+        else {
+            throw JSONException("Operator[] failed, this JSONObject is not an array");
+        }
+    }
+
+    size_t JSONObject::size() const {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr.size();
+        }
+        else {
+            throw JSONException("Current JSONObject is not an array, cannot call size()");
+        }
+    }
+    
+    void JSONObject::clear() {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr.clear();
+        }
+        else {
+            throw JSONException("Current JSONObject is not an array, cannot call clear()");
+        }
     }
 
     void JSONObject::removeField(const JSONString& key) {
