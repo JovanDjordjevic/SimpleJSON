@@ -160,6 +160,9 @@ void testJSONArray() {
     initialzedArray.append(JSONObject());                       assert(initialzedArray.size() == 8);
     initialzedArray.append(JSONObject("str obj"));              assert(initialzedArray.size() == 9);
     initialzedArray.append(JSONObject{{"key1", "value1"}});     assert(initialzedArray.size() == 10);
+    initialzedArray.pop();                                      assert(initialzedArray.size() == 9);
+    initialzedArray.pop();                                      assert(initialzedArray.size() == 8);
+    
 
     // assignment
     JSONArray arr2;                                             assert(arr2.size() == 0);

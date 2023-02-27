@@ -124,6 +124,8 @@ namespace simpleJSON {
             template <typename T>
             void append(T&& arg);
 
+            void pop();
+
             JSONObject& operator[](const size_t index);
             const JSONObject& operator[](const size_t index) const;
 
@@ -432,6 +434,12 @@ namespace simpleJSON {
     void JSONArray::append(T&& arg) {
         FUNCTRACE
         value.emplace_back(std::forward<T>(arg));
+        return;
+    }
+
+    void JSONArray::pop() {
+        FUNCTRACE
+        value.pop_back();
         return;
     }
 
