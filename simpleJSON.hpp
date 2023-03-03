@@ -948,12 +948,7 @@ namespace internal {
         bool lastReadWasComma = false;
 
         while (stream) {
-            c = stream.peek();
-
-            if (isspace(c)) {
-                stream.get(c);
-                continue;
-            }
+            c = peekNextNonSpaceCharacter__internal(stream);
 
             if (c == ',') {
                 if (expectingComma) {
@@ -1019,24 +1014,30 @@ namespace internal {
     simpleJSON::JSONObject parseObject__internal(std::istream& stream) {
         FUNCTRACE
 
-        char c;
-        stream.get(c);
+        char next;
+        stream.get(next);
 
-        if (c != '{') {
-            std::string errorMessage = "Error while parsing object, expected '{', got '" + std::string{c} + "'";
+        if (next != '{') {
+            std::string errorMessage = "Error while parsing object, expected '{', got '" + std::string{next} + "'";
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
         simpleJSON::JSONObject result;
 
-        while (stream) {
-            char next = peekNextNonSpaceCharacter__internal(stream);
+        bool lastReadWasComma = false;
 
-            // empty object
+        while (stream) {
+            next = peekNextNonSpaceCharacter__internal(stream);
+
             if (next == '}') {
+                if (lastReadWasComma) {
+                    throw simpleJSON::JSONException("Trailing comma not allowed in object");
+                }
                 stream.get();
                 return result;
             }
+
+            lastReadWasComma = false;
 
             // must read string as map key if object is not empty
             if (next != '"') {
@@ -1048,11 +1049,11 @@ namespace internal {
 
             // possible white space between map key and :
             next = peekNextNonSpaceCharacter__internal(stream);
-            stream.get(c);
+            stream.get(next);
 
             // must read separator
-            if (c != ':') {
-                std::string errorMessage = "Error while parsing object, expected ':', got '" + std::string{c} + "'";
+            if (next != ':') {
+                std::string errorMessage = "Error while parsing object, expected ':', got '" + std::string{next} + "'";
                 throw simpleJSON::JSONException(errorMessage.c_str());
             }
 
@@ -1091,16 +1092,17 @@ namespace internal {
 
             //  possible white space between map value and , or }
             next = peekNextNonSpaceCharacter__internal(stream);
-            stream.get(c);
+            stream.get(next);
             
-            if (c == ',') {
+            if (next == ',') {
+                lastReadWasComma = true;
                 continue;
             }
-            else if (c == '}') {
+            else if (next == '}') {
                 break;
             }
             else {
-                std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{c} + "'"; 
+                std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'"; 
                 throw simpleJSON::JSONException(errorMessage.c_str());
             }
         }
