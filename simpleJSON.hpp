@@ -35,9 +35,14 @@ namespace simpleJSON {
     using JSONFloating = long double;
     using JSONIntegral = long long int;
 
+    // You may change this to suit your needs
+    const std::string defaultIndentString = "\t";
+
     JSONObject parseFromFile(const char* fileName);
     JSONObject parseFromString(std::string& jsonString);
-    void dumpToFile(const char* fileName);
+    // void dumpToFile(const char* fileName);
+    std::string dumpToString(const JSONObject& obj);
+    std::string dumpToPrettyString(const JSONObject& obj, const std::string& indentString = defaultIndentString);
 
     class JSONException : public std::exception {
         public:
@@ -113,7 +118,7 @@ namespace simpleJSON {
             friend bool operator==(const JSONNull&, const JSONNull&);
             friend bool operator!=(const JSONNull&, const JSONNull&);
             
-            std::string toString() const; 
+            std::string toString() const;
     };
 
     class JSONArray {
@@ -135,6 +140,7 @@ namespace simpleJSON {
             size_t size() const;
             void clear();
             std::string toString() const;
+            std::string toIndentedString(unsigned indentLevel, const std::string& indentString) const;
 
         private:
             std::vector<JSONObject> value;
@@ -178,6 +184,7 @@ namespace simpleJSON {
             friend bool operator>=(const JSONObject& lhs, const JSONObject& rhs);
 
             std::string toString() const;
+            std::string toIndentedString(unsigned indentLevel, const std::string& indentString) const;
 
         private:
             std::variant<JSONString, JSONNumber, JSONBool, JSONNull, JSONArray, std::map<JSONString, JSONObject>> value;
@@ -214,6 +221,8 @@ namespace internal {
     simpleJSON::JSONNull parseNull__internal(std::istream& stream);
     simpleJSON::JSONArray parseArray__internal(std::istream& stream);
     simpleJSON::JSONObject parseObject__internal(std::istream& stream);
+
+    std::string repeatIndentString(unsigned indentLevel, const std::string& indentStirng);
 } // namespace internal
 
 namespace simpleJSON {
@@ -232,6 +241,14 @@ namespace simpleJSON {
     }
 
     // void dumpToFile(const char* fileName);
+
+    std::string dumpToString(const JSONObject& obj) {
+        return obj.toString();
+    }
+
+    std::string dumpToPrettyString(const JSONObject& obj, const std::string& indentString) {
+        return obj.toIndentedString(1, indentString);
+    }
 
     // JSONexception
 
@@ -485,19 +502,39 @@ namespace simpleJSON {
     }
 
     std::string JSONArray::toString() const {
-        std::string res = "[";
-
-        for(auto& elem : value) {
-            res += elem.toString() + ",";
-        }
-
-        if (res.length() > 1) {
-            res.back() = ']';
+        if (size() == 0) {
+            return "[]";
         }
         else {
-            res += "]";
+            std::string res = "[";
+         
+            for(auto& elem : value) {
+                res += elem.toString() + ",";
+            }
+
+            res.back() = ']';
+
+            return res;
         }
-        return res;
+    }
+
+    std::string JSONArray::toIndentedString(unsigned indentLevel, const std::string& indentString) const {
+        if (size() == 0) {
+            return "[]";
+        }
+        else {
+            std::string res = "[\n";
+
+            for (auto& elem : value) {
+                res += internal::repeatIndentString(indentLevel, indentString) + elem.toIndentedString(indentLevel + 1, indentString) + ",\n";
+            }
+
+            res.erase(res.length() - 2);
+            
+            res += "\n" + internal::repeatIndentString(indentLevel - 1, indentString) + "]";
+
+            return res;
+        }
     }
 
     // JSONObject
@@ -679,20 +716,61 @@ namespace simpleJSON {
         else if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
             auto& map = std::get<std::map<JSONString, JSONObject>>(value);
             
-            std::string res = "{";
-
-            for (auto& [key, val] : map) {
-                res += key.toString() + ":" + val.toString() + ",";
-            }
-
-            if (res.length() > 1) {
-                res.back() = '}';
+            if (map.size() == 0) {
+                return "{}";
             }
             else {
-                res += "}";
+                std::string res = "{";
+
+                for (auto& [key, val] : map) {
+                    res += key.toString() + ":" + val.toString() + ",";
+                }
+
+                res.back() = '}';
+                
+                return res;
             }
-            
-            return res;
+        }
+        
+        // should not get here
+        throw JSONException("Error when converting JSONObject to string");
+    }
+
+    std::string JSONObject::toIndentedString(unsigned indentLevel, const std::string& indentString) const {
+        if (std::holds_alternative<JSONString>(value)) {
+            return std::get<JSONString>(value).toString();
+        }
+        else if (std::holds_alternative<JSONNumber>(value)) {
+            return std::get<JSONNumber>(value).toString();
+        }
+        else if (std::holds_alternative<JSONBool>(value)) {
+            return std::get<JSONBool>(value).toString();
+        }
+        else if (std::holds_alternative<JSONNull>(value)) {
+            return std::get<JSONNull>(value).toString();
+        }
+        else if (std::holds_alternative<JSONArray>(value)) {
+            return std::get<JSONArray>(value).toIndentedString(indentLevel, indentString);
+        }
+        else if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
+            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+
+            if (map.size() == 0) {
+                return "{}";
+            }
+            else {
+                std::string res = "{\n";
+
+                for (auto& [key, val] : map) {
+                    res += internal::repeatIndentString(indentLevel, indentString) + key.toString() + ":" + val.toIndentedString(indentLevel + 1, indentString) + ",\n";
+                }
+
+                res.erase(res.length() - 2);
+
+                res += "\n" + internal::repeatIndentString(indentLevel - 1, indentString) + "}";
+                
+                return res;
+            }
         }
         
         // should not get here
@@ -1108,6 +1186,33 @@ namespace internal {
         }
         
         return result;
+    }
+
+    std::string repeatIndentString(unsigned indentLevel, const std::string& indentStirng) {
+        if (indentLevel == 0 || indentStirng.empty()) {
+            return {};
+        }
+        if (indentLevel == 1) {
+            return indentStirng;
+        }
+
+        const auto indentStringSize = indentStirng.size();
+        if (indentStringSize == 1) {
+            return std::string(indentLevel, indentStirng.front());
+        }
+
+        std::string ret(indentStirng);
+        ret.reserve(indentStringSize * indentLevel);
+        unsigned i = 2;
+        
+        while (i < indentLevel) {
+            ret += ret;
+            i *= 2;
+        }
+        
+        ret.append(ret.c_str(), (indentLevel - (i / 2)) * indentStringSize);
+
+        return ret;
     }
 } // namespace internal
 
