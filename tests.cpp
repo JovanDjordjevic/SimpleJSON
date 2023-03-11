@@ -206,7 +206,7 @@ void testJSONObject() {
     jsonArr1.append(someString1);
 
     // constructors
-    JSONObject obj0;
+    JSONObject obj0;                                                        assert(obj0.getNumberOfFields() == 0);
     JSONObject obj1("some other string literal");
     JSONObject obj2(someString1);
     JSONObject obj3(std::string("some other std string"));
@@ -229,12 +229,12 @@ void testJSONObject() {
     JSONObject aaaaaa(NULL);
     JSONObject obj20(JSONArray{});
     JSONObject obj21(jsonArr1);
-    JSONObject obj22(JSONObject{});
+    JSONObject obj22(JSONObject{});                                         assert(obj22.getNumberOfFields() == 0);
         JSONObject tmp;
         tmp["key1"] = JSONString("value1");
-    JSONObject obj23(tmp);
-        const char* key2 = "key1";
-        std::string key4{key2};
+    JSONObject obj23(tmp);                                                  assert(obj23.getNumberOfFields() == 1);
+        const char* key2 = "key2";
+        std::string key4 = "key4";
         JSONString key6("key6");
         JSONArray arr;
             arr.append(1);
@@ -250,6 +250,12 @@ void testJSONObject() {
             {"key8", obj23},
             {"key9",  {{"k1", 1}, {"k2", 2}}   }
         };
+
+    assert(o.getNumberOfFields() == 9);
+    assert(o["key9"].getNumberOfFields() == 2);
+    o.removeField("key1");                                                  
+    assert(o.getNumberOfFields() == 8);
+    assert(o["nonExistantField"].getNumberOfFields() == 0);         // NOTE: operator[] will create a default json object if the key does not exist
 
     // assignment
     obj1 = "some String";

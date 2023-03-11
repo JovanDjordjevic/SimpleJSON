@@ -172,6 +172,7 @@ namespace simpleJSON {
             const JSONObject& operator[](const size_t index) const;
 
             void removeField(const JSONString& key);
+            size_t getNumberOfFields() const;
 
             JSONObject& operator[](const JSONString& key);
             const JSONObject& operator[](const JSONString& key) const;
@@ -631,6 +632,17 @@ namespace simpleJSON {
             throw JSONException("Removing field failed, this JSONObject is not a map");
         }
         return;
+    }
+
+    
+    size_t JSONObject::getNumberOfFields() const {
+        if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
+            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+            return map.size();
+        }
+        else {
+            throw JSONException("Removing field failed, this JSONObject is not a map");
+        }
     }
 
     JSONObject& JSONObject::operator[](const JSONString& key) {
