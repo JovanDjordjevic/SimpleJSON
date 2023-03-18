@@ -432,7 +432,7 @@ namespace simpleJSON {
 
     // JSONNull
 
-    JSONNull::JSONNull() {};
+    JSONNull::JSONNull() {}
     
     JSONNull::JSONNull(const std::nullptr_t) {}
 
