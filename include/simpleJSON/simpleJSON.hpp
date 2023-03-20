@@ -1067,6 +1067,10 @@ namespace internal {
                 }
             }
 
+            if (expectingComma) {
+                throw simpleJSON::JSONException("Entries in array must be separated by a comma");
+            }
+
             NextJsonType nextType = detectNextType__internal(c);
             
             switch (nextType) {
