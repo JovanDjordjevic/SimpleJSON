@@ -1,6 +1,7 @@
 #ifndef __SIMPLE_JSON__
 #define __SIMPLE_JSON__
 
+#include <algorithm>
 #include <exception>
 #include <fstream>
 #include <initializer_list>
@@ -888,6 +889,21 @@ namespace internal {
     }
 
     simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str) {
+        if (str.back() == '.') {
+            throw simpleJSON::JSONException("Error while parsing number, decimal point cannot be the last character");
+        }
+
+        auto dotIt = std::find(std::cbegin(str), std::cend(str), '.');
+        auto eIt = std::find_if(std::cbegin(str), std::cend(str), [](const auto& c) { return c == 'e' || c == 'E'; });
+        
+        if (dotIt != std::cend(str) && eIt != std::cend(str) && std::distance(dotIt, eIt) == 1) {
+            throw simpleJSON::JSONException("Error while parsing number, 'e' or 'E' cannot be the first character after decimal point");
+        }
+
+        if ((str.length() >= 1 && str[0] == '.') || (str.length() >= 2 && (str[0] == '-' && str[1] == '.'))) {
+            throw simpleJSON::JSONException("Error while parsing number, missing digit before decimal point");
+        }
+
         char* afterEnd;
         simpleJSON::JSONFloating result = std::strtold(str.c_str(), &afterEnd);
 
@@ -900,11 +916,15 @@ namespace internal {
     }
 
     simpleJSON::JSONIntegral strToJSONIntegral__internal(const std::string& str) {
+        if ((str.length() > 1 && str[0] == '0') || (str.length() > 2 && (str[0] == '-' && str[1] == '0'))) {
+            throw simpleJSON::JSONException("Error while parsing number, integer cannot start with 0");
+        }
+
         char* afterEnd;
         simpleJSON::JSONIntegral result = std::strtoll(str.c_str(), &afterEnd, 10);
             
         if (*afterEnd != '\0') {
-            std::string errorMessage = "Error while parsing number, invalid signed integer";
+            std::string errorMessage = "Error while parsing number, invalid integer";
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
