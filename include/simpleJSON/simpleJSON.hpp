@@ -2,6 +2,7 @@
 #define __SIMPLE_JSON__
 
 #include <algorithm>
+#include <cctype>
 #include <exception>
 #include <fstream>
 #include <initializer_list>
@@ -211,6 +212,8 @@ namespace internal {
     simpleJSON::JSONObject beginParseFromStream__internal(std::istream& stream);
 
     NextJsonType detectNextType__internal(char nextCharInStream);
+
+    bool isValidEscapedCharacter__internal(char c);
 
     char peekNextNonSpaceCharacter__internal(std::istream& stream);
 
@@ -877,6 +880,11 @@ namespace internal {
         }
     }
 
+    bool isValidEscapedCharacter__internal(char c) {
+        return c == '"' || c == '\\' || c == '/' || c == 'b' || 
+               c == 'f' || c == 'n' || c == 'r' || c == 't' || c == 'u';
+    }
+
     char peekNextNonSpaceCharacter__internal(std::istream& stream) {
         char next = stream.peek();
         
@@ -944,9 +952,18 @@ namespace internal {
 
         std::string result;
         bool currentCharIsEscaped = false;
+        short numHexDigitsToRead = 0;
 
         while (stream) {
             stream.get(currentChar);
+
+            if (numHexDigitsToRead > 0) {
+                if (!std::isxdigit(static_cast<unsigned char>(currentChar))) {
+                    throw simpleJSON::JSONException("\\u must be followed by 4 hex characters");
+                }
+                
+                --numHexDigitsToRead;
+            }
 
             if (currentChar == '"' && !currentCharIsEscaped) {
                 return result;
@@ -956,6 +973,14 @@ namespace internal {
                 currentCharIsEscaped = true;
             }
             else if (currentCharIsEscaped) {
+                if (!isValidEscapedCharacter__internal(currentChar)) {
+                    throw simpleJSON::JSONException("Error while parsing string, invalid escaped character");
+                }
+
+                if (currentChar == 'u') {
+                    numHexDigitsToRead = 4;
+                }
+
                 currentCharIsEscaped = false;
             }
             
