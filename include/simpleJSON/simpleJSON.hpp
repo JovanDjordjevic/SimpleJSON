@@ -827,7 +827,7 @@ namespace internal {
                 result = internal::parseObject__internal(stream);
                 break;
             case internal::NextJsonType::JSON_END_OF_STREAM:    
-                // next read will fail and function will end
+                throw simpleJSON::JSONException("Cannot parse empty file or file containing only whitespace");
                 break;
             default: 
                 std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'";
