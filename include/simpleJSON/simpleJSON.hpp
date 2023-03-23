@@ -950,13 +950,13 @@ namespace internal {
             throw simpleJSON::JSONException(errorMessage.c_str());
         }
 
-        std::string result;
+        std::string result = "";
         bool currentCharIsEscaped = false;
         short numHexDigitsToRead = 0;
-
+        
+        stream.get(currentChar);
+        
         while (stream) {
-            stream.get(currentChar);
-
             if (numHexDigitsToRead > 0) {
                 if (!std::isxdigit(static_cast<unsigned char>(currentChar))) {
                     throw simpleJSON::JSONException("\\u must be followed by 4 hex characters");
@@ -985,11 +985,10 @@ namespace internal {
             }
             
             result += currentChar;
+            stream.get(currentChar);
         }
 
-        // should not get here
-        std::string errorMessage = "Error while parsing string, unexpected end of stream";
-        throw simpleJSON::JSONException(errorMessage.c_str());
+        throw simpleJSON::JSONException("Error while parsing string, unexpected end of stream");
     }
 
     simpleJSON::JSONNumber parseNumber__internal(std::istream& stream) {
