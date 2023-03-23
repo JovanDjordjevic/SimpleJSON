@@ -955,7 +955,7 @@ namespace internal {
         short numHexDigitsToRead = 0;
         
         stream.get(currentChar);
-        
+
         while (stream) {
             if (numHexDigitsToRead > 0) {
                 if (!std::isxdigit(static_cast<unsigned char>(currentChar))) {
@@ -967,6 +967,10 @@ namespace internal {
 
             if (currentChar == '"' && !currentCharIsEscaped) {
                 return result;
+            }
+
+            if (0 <= static_cast<int>(currentChar) && static_cast<int>(currentChar) <= 31) {
+                throw simpleJSON::JSONException("Error while parsing string, unescaped control character");
             }
             
             if (currentChar == '\\' && !currentCharIsEscaped) {
