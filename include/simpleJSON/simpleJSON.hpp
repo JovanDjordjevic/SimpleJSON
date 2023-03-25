@@ -46,14 +46,10 @@ namespace simpleJSON {
     std::string dumpToString(const JSONObject& obj);
     std::string dumpToPrettyString(const JSONObject& obj, const std::string& indentString = defaultIndentString);
 
-    class JSONException : public std::exception {
+    class JSONException : public std::runtime_error {
         public:
-            JSONException(const char* msg);
-
-            const char * what () const throw ();
-
-        private:
-            const char* message;
+            JSONException(const std::string& msg);
+            const char* what() const noexcept override;
     };
 
     class JSONString {
@@ -256,10 +252,10 @@ namespace simpleJSON {
 
     // JSONexception
 
-    JSONException::JSONException(const char* msg) : message(msg) {}
+    JSONException::JSONException(const std::string& msg) : std::runtime_error(msg) {}
 
-    const char* JSONException::what () const throw () {
-        return message;
+    const char* JSONException::what() const noexcept {
+        return std::runtime_error::what();
     }
 
     // JSONString
@@ -916,8 +912,7 @@ namespace internal {
         simpleJSON::JSONFloating result = std::strtold(str.c_str(), &afterEnd);
 
         if (*afterEnd != '\0') {
-            std::string errorMessage = "Error while parsing number, invalid floating point number";
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error while parsing number, invalid floating point number");
         }
 
         return result;
@@ -932,8 +927,7 @@ namespace internal {
         simpleJSON::JSONIntegral result = std::strtoll(str.c_str(), &afterEnd, 10);
             
         if (*afterEnd != '\0') {
-            std::string errorMessage = "Error while parsing number, invalid integer";
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error while parsing number, invalid integer");
         }
 
         return result;
@@ -946,8 +940,7 @@ namespace internal {
         stream.get(currentChar);
 
         if (currentChar != '"') {
-            std::string errorMessage = "Error while parsing string, expected '\"'";
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error while parsing string, expected '\"'");
         }
 
         std::string result = "";
@@ -1051,8 +1044,7 @@ namespace internal {
             } 
         }
 
-        std::string errorMessage = "Error while parsing bool, expected \"true\" or \"false\", got \"" + out + "\"";
-        throw simpleJSON::JSONException(errorMessage.c_str());
+        throw simpleJSON::JSONException("Error while parsing bool, expected \"true\" or \"false\", got \"" + out + "\"");
     }
     
     simpleJSON::JSONNull parseNull__internal(std::istream& stream) {
@@ -1067,8 +1059,7 @@ namespace internal {
         std::string out = {c1, c2, c3, c4};
 
         if (out != "null") {
-            std::string errorMessage = "Error while parsing null, expected \"null\", got \"" + out + "\"";
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error while parsing null, expected \"null\", got \"" + out + "\"");
         }
 
         return simpleJSON::JSONNull{};
@@ -1081,8 +1072,7 @@ namespace internal {
         stream.get(c);
 
         if (c != '[') {
-            std::string errorMessage = "Error while parsing array, expected '[', got '" + std::string{c} + "'";
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error while parsing array, expected '[', got '" + std::string{c} + "'");
         }
 
         simpleJSON::JSONArray result;
@@ -1143,9 +1133,8 @@ namespace internal {
                 case NextJsonType::JSON_END_OF_STREAM:
                     // next read will fail and function will end
                     break;
-                default: 
-                    std::string errorMessage = "Error while parsing array, unexpected next character '" + std::string{c} + "'"; 
-                    throw simpleJSON::JSONException(errorMessage.c_str());
+                default:
+                    throw simpleJSON::JSONException("Error while parsing array, unexpected next character '" + std::string{c} + "'");
                     break;
             }
 
@@ -1154,8 +1143,7 @@ namespace internal {
         }
 
         // should not get here
-        std::string errorMessage = "Error while parsing array, unexpected end of stream";
-        throw simpleJSON::JSONException(errorMessage.c_str());
+        throw simpleJSON::JSONException("Error while parsing array, unexpected end of stream");
     }
 
     simpleJSON::JSONObject parseObject__internal(std::istream& stream) {
@@ -1165,8 +1153,7 @@ namespace internal {
         stream.get(next);
 
         if (next != '{') {
-            std::string errorMessage = "Error while parsing object, expected '{', got '" + std::string{next} + "'";
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error while parsing object, expected '{', got '" + std::string{next} + "'");
         }
 
         simpleJSON::JSONObject result;
@@ -1188,8 +1175,7 @@ namespace internal {
 
             // must read string as map key if object is not empty
             if (next != '"') {
-                std::string errorMessage = "Error while parsing object, expected '\"', got '" + std::string{next} + "'";
-                throw simpleJSON::JSONException(errorMessage.c_str());
+                throw simpleJSON::JSONException("Error while parsing object, expected '\"', got '" + std::string{next} + "'");
             }
 
             simpleJSON::JSONString key = parseString__internal(stream);
@@ -1200,8 +1186,7 @@ namespace internal {
 
             // must read separator
             if (next != ':') {
-                std::string errorMessage = "Error while parsing object, expected ':', got '" + std::string{next} + "'";
-                throw simpleJSON::JSONException(errorMessage.c_str());
+                throw simpleJSON::JSONException("Error while parsing object, expected ':', got '" + std::string{next} + "'");
             }
 
             // possible white space between : and map value
@@ -1231,9 +1216,8 @@ namespace internal {
                 case NextJsonType::JSON_END_OF_STREAM:
                     // next read will fail and function will end
                     break;
-                default: 
-                    std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'"; 
-                    throw simpleJSON::JSONException(errorMessage.c_str());
+                default:
+                    throw simpleJSON::JSONException("Error while parsing object, unexpected next character '" + std::string{next} + "'");
                     break;
             }
 
@@ -1249,8 +1233,7 @@ namespace internal {
                 break;
             }
             else {
-                std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'"; 
-                throw simpleJSON::JSONException(errorMessage.c_str());
+                throw simpleJSON::JSONException("Error while parsing object, unexpected next character '" + std::string{next} + "'");
             }
         }
         
