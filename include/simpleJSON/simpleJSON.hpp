@@ -210,7 +210,7 @@ namespace internal {
     NextJsonType detectNextType__internal(char nextCharInStream);
 
     bool isValidEscapedCharacter__internal(char c);
-
+    bool isValidWhitespace__internal(char c);
     char peekNextNonSpaceCharacter__internal(std::istream& stream);
 
     simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str);
@@ -881,10 +881,15 @@ namespace internal {
                c == 'f' || c == 'n' || c == 'r' || c == 't' || c == 'u';
     }
 
+    bool isValidWhitespace__internal(char c) {
+        // form feed (0x0c, '\f') and vertical tab (0x0b, '\v') are not explicitly allowed as whitespace in RFC 8259
+        return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+    }
+
     char peekNextNonSpaceCharacter__internal(std::istream& stream) {
         char next = stream.peek();
         
-        while (isspace(next)) {
+        while (isValidWhitespace__internal(next)) {
             stream.get();
             next = stream.peek();
         }
