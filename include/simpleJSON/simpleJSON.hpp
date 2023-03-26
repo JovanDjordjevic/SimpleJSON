@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cctype>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <initializer_list>
 #include <map>
@@ -40,8 +41,8 @@ namespace simpleJSON {
     // You may change this to suit your needs
     const std::string defaultIndentString = "\t";
 
-    JSONObject parseFromFile(const char* fileName);
-    JSONObject parseFromString(std::string& jsonString);
+    JSONObject parseFromFile(const std::filesystem::path& fileName);
+    JSONObject parseFromString(const std::string& jsonString);
     // void dumpToFile(const char* fileName);
     std::string dumpToString(const JSONObject& obj);
     std::string dumpToPrettyString(const JSONObject& obj, const std::string& indentString = defaultIndentString);
@@ -126,17 +127,15 @@ namespace simpleJSON {
 
             template <typename T>
             void append(T&& arg);
-
             void pop();
+            size_t size() const;
+            void clear();
 
             JSONObject& operator[](const size_t index);
             const JSONObject& operator[](const size_t index) const;
-
             friend bool operator==(const JSONArray& lhs, const JSONArray& rhs);
             friend bool operator!=(const JSONArray& lhs, const JSONArray& rhs);
             
-            size_t size() const;
-            void clear();
             std::string toString() const;
             std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
 
@@ -165,16 +164,13 @@ namespace simpleJSON {
             void pop();
             size_t size() const;
             void clear();
-
-            JSONObject& operator[](const size_t index);
-            const JSONObject& operator[](const size_t index) const;
-
             void removeField(const JSONString& key);
             size_t getNumberOfFields() const;
 
+            JSONObject& operator[](const size_t index);
+            const JSONObject& operator[](const size_t index) const;
             JSONObject& operator[](const JSONString& key);
             const JSONObject& operator[](const JSONString& key) const;
-
             friend bool operator==(const JSONObject& lhs, const JSONObject& rhs);
             friend bool operator!=(const JSONObject& lhs, const JSONObject& rhs);
             friend bool operator<(const JSONObject& lhs, const JSONObject& rhs);
@@ -188,7 +184,6 @@ namespace simpleJSON {
         private:
             std::variant<JSONString, JSONNumber, JSONBool, JSONNull, JSONArray, std::map<JSONString, JSONObject>> value;
     };
-
 }   // namespace simpleJSON 
 
 //------------------------------------- IMPLEMENTATION -------------------------------------
@@ -207,10 +202,10 @@ namespace internal {
 
     simpleJSON::JSONObject beginParseFromStream__internal(std::istream& stream);
 
-    NextJsonType detectNextType__internal(char nextCharInStream);
+    NextJsonType detectNextType__internal(const char nextCharInStream);
 
-    bool isValidEscapedCharacter__internal(char c);
-    bool isValidWhitespace__internal(char c);
+    bool isValidEscapedCharacter__internal(const char c);
+    bool isValidWhitespace__internal(const char c);
     char peekNextNonSpaceCharacter__internal(std::istream& stream);
 
     simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str);
@@ -225,14 +220,14 @@ namespace internal {
 } // namespace internal
 
 namespace simpleJSON {
-    JSONObject parseFromFile(const char* fileName) {
+    JSONObject parseFromFile(const std::filesystem::path& fileName) {
         FUNCTRACE
 
         std::ifstream stream(fileName);
         return internal::beginParseFromStream__internal(stream);
     }
 
-    JSONObject parseFromString(std::string& jsonString) {
+    JSONObject parseFromString(const std::string& jsonString) {
         FUNCTRACE
 
         std::stringstream stream(jsonString);
@@ -466,6 +461,15 @@ namespace simpleJSON {
         return;
     }
 
+    size_t JSONArray::size() const {
+        return value.size();
+    }
+    
+    void JSONArray::clear() {
+        value.clear();
+        return;
+    }
+
     JSONObject& JSONArray::operator[](const size_t index) {
         if (index >= value.size()) {
             throw JSONException("JSONArray operator[] index out of range");
@@ -490,15 +494,6 @@ namespace simpleJSON {
 
     bool operator!=(const JSONArray& lhs, const JSONArray& rhs) {
         return !(lhs == rhs);
-    }
-
-    size_t JSONArray::size() const {
-        return value.size();
-    }
-    
-    void JSONArray::clear() {
-        value.clear();
-        return;
     }
 
     std::string JSONArray::toString() const {
@@ -579,26 +574,6 @@ namespace simpleJSON {
         }
     }
 
-    JSONObject& JSONObject::operator[](const size_t index) {
-        if (std::holds_alternative<JSONArray>(value)) {
-            auto& arr = std::get<JSONArray>(value);
-            return arr[index];
-        }
-        else {
-            throw JSONException("Operator[] failed, this JSONObject is not an array");
-        }
-    }
-
-    const JSONObject& JSONObject::operator[](const size_t index) const {
-        if (std::holds_alternative<JSONArray>(value)) {
-            auto& arr = std::get<JSONArray>(value);
-            return arr[index];
-        }
-        else {
-            throw JSONException("Operator[] failed, this JSONObject is not an array");
-        }
-    }
-
     size_t JSONObject::size() const {
         if (std::holds_alternative<JSONArray>(value)) {
             auto& arr = std::get<JSONArray>(value);
@@ -642,6 +617,26 @@ namespace simpleJSON {
         }
         else {
             throw JSONException("Removing field failed, this JSONObject is not a map");
+        }
+    }
+
+    JSONObject& JSONObject::operator[](const size_t index) {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr[index];
+        }
+        else {
+            throw JSONException("Operator[] failed, this JSONObject is not an array");
+        }
+    }
+
+    const JSONObject& JSONObject::operator[](const size_t index) const {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr[index];
+        }
+        else {
+            throw JSONException("Operator[] failed, this JSONObject is not an array");
         }
     }
 
@@ -793,7 +788,6 @@ namespace simpleJSON {
         // should not get here
         throw JSONException("Error when converting JSONObject to string");
     }
-
 } // namespace simpleJSON 
 
 namespace internal {
@@ -825,26 +819,25 @@ namespace internal {
             case internal::NextJsonType::JSON_OBJECT:
                 result = internal::parseObject__internal(stream);
                 break;
-            case internal::NextJsonType::JSON_END_OF_STREAM:    
+            case internal::NextJsonType::JSON_END_OF_STREAM: 
                 throw simpleJSON::JSONException("Cannot parse empty file or file containing only whitespace");
                 break;
-            default: 
-                std::string errorMessage = "Error while parsing object, unexpected next character '" + std::string{next} + "'";
-                throw simpleJSON::JSONException(errorMessage.c_str());
+            case internal::NextJsonType::JSON_ERROR: [[fallthrough]];
+            default:
+                throw simpleJSON::JSONException("Error while parsing object, unexpected next character '" + std::string{next} + "'");
                 break;
         }
    
         next = peekNextNonSpaceCharacter__internal(stream);
 
         if (next != std::istream::traits_type::eof()) {
-            std::string errorMessage = "Error after reading a valid json object. Expected EOF but found '" + std::string{next} + "'"; 
-            throw simpleJSON::JSONException(errorMessage.c_str());
+            throw simpleJSON::JSONException("Error after reading a valid json object. Expected EOF but found '" + std::string{next} + "'");
         }
         
         return result;
     }
 
-    NextJsonType detectNextType__internal(char nextCharInStream) {
+    NextJsonType detectNextType__internal(const char nextCharInStream) {
         switch (nextCharInStream) {
             case '"':
                 return NextJsonType::JSON_STRING;
@@ -876,12 +869,12 @@ namespace internal {
         }
     }
 
-    bool isValidEscapedCharacter__internal(char c) {
+    bool isValidEscapedCharacter__internal(const char c) {
         return c == '"' || c == '\\' || c == '/' || c == 'b' || 
                c == 'f' || c == 'n' || c == 'r' || c == 't' || c == 'u';
     }
 
-    bool isValidWhitespace__internal(char c) {
+    bool isValidWhitespace__internal(const char c) {
         // form feed (0x0c, '\f') and vertical tab (0x0b, '\v') are not explicitly allowed as whitespace in RFC 8259
         return c == ' ' || c == '\n' || c == '\r' || c == '\t';
     }
@@ -1138,6 +1131,7 @@ namespace internal {
                 case NextJsonType::JSON_END_OF_STREAM:
                     // next read will fail and function will end
                     break;
+                case internal::NextJsonType::JSON_ERROR: [[fallthrough]];
                 default:
                     throw simpleJSON::JSONException("Error while parsing array, unexpected next character '" + std::string{c} + "'");
                     break;
@@ -1221,6 +1215,7 @@ namespace internal {
                 case NextJsonType::JSON_END_OF_STREAM:
                     // next read will fail and function will end
                     break;
+                case internal::NextJsonType::JSON_ERROR: [[fallthrough]];
                 default:
                     throw simpleJSON::JSONException("Error while parsing object, unexpected next character '" + std::string{next} + "'");
                     break;

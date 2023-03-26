@@ -14,7 +14,8 @@ void testStreamIO() {
     auto obj1_2 = simpleJSON::parseFromString(obj1Pretty);
     assert(obj1_1 == obj1_2);
  
-    auto obj2 = simpleJSON::parseFromFile("testInputs/mediumJson.json");
+    std::string filePath{"testInputs/mediumJson.json"};
+    auto obj2 = simpleJSON::parseFromFile(filePath);
     std::string obj2Str = simpleJSON::dumpToString(obj2);
     std::cout << obj2Str << std::endl << std::endl;
     std::string obj2Pretty = simpleJSON::dumpToPrettyString(obj2);
@@ -23,7 +24,8 @@ void testStreamIO() {
     auto obj2_2 = simpleJSON::parseFromString(obj2Pretty);
     assert(obj2_1 == obj2_2);
 
-    auto obj3 = simpleJSON::parseFromFile("testInputs/veryBigJson.json");
+    std::filesystem::path path{"testInputs/veryBigJson.json"};
+    auto obj3 = simpleJSON::parseFromFile(path);
     std::string obj3Str = simpleJSON::dumpToString(obj3);
     std::cout << obj3Str << std::endl << std::endl;
     std::string obj3Pretty = simpleJSON::dumpToPrettyString(obj3);
