@@ -62,7 +62,7 @@ jobs:
         run: mkdir build 
       - name: "Run CMake"
         working-directory: build
-        run: cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTING=ON ..
+        run: cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTING=ON -DENABLE_COVERAGE_REPORT=OFF ..
       - name: "Build targets"
         working-directory: build
         run: cmake --build .
