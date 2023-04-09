@@ -1,11 +1,11 @@
-#include "simpleJSON/simpleJSON.hpp"
-
 #include <cassert>
-
 #include <iostream>
 
+#include "simpleJSON/simpleJSON.hpp"
+
 void testStreamIO() {
-    auto obj1 = simpleJSON::parseFromFile("testInputs/smallJson.json");
+    // auto obj1 = simpleJSON::parseFromFile("testInputs/smallJson.json");
+    auto obj1 = simpleJSON::parseFromFile("../../tests/testInputs/smallJson.json");
     std::string obj1Str = simpleJSON::dumpToString(obj1);
     std::cout << obj1Str << std::endl << std::endl;
     std::string obj1Pretty = simpleJSON::dumpToPrettyString(obj1);
@@ -14,7 +14,8 @@ void testStreamIO() {
     auto obj1_2 = simpleJSON::parseFromString(obj1Pretty);
     assert(obj1_1 == obj1_2);
  
-    std::string filePath{"testInputs/mediumJson.json"};
+    // std::string filePath{"testInputs/mediumJson.json"};
+    std::string filePath{"../../tests/testInputs/mediumJson.json"};
     auto obj2 = simpleJSON::parseFromFile(filePath);
     std::string obj2Str = simpleJSON::dumpToString(obj2);
     std::cout << obj2Str << std::endl << std::endl;
@@ -24,7 +25,8 @@ void testStreamIO() {
     auto obj2_2 = simpleJSON::parseFromString(obj2Pretty);
     assert(obj2_1 == obj2_2);
 
-    std::filesystem::path path{"testInputs/veryBigJson.json"};
+    // std::filesystem::path path{"testInputs/veryBigJson.json"};
+    std::filesystem::path path{"../../tests/testInputs/veryBigJson.json"};
     auto obj3 = simpleJSON::parseFromFile(path);
     std::string obj3Str = simpleJSON::dumpToString(obj3);
     std::cout << obj3Str << std::endl << std::endl;

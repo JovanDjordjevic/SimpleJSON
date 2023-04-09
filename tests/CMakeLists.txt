@@ -1,57 +1,31 @@
 if(ENABLE_TESTING)
-    set(TEST_JSON_STRING_EXECUTABLE "testJSONString")
-    add_executable(${TEST_JSON_STRING_EXECUTABLE} "testJSONString.cpp")
-    target_link_libraries(${TEST_JSON_STRING_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_JSON_STRING_EXECUTABLE} COMMAND ${TEST_JSON_STRING_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+    set(TEST_SOURCES "testJSONString.cpp"
+                     "testJSONNumber.cpp"
+                     "testJSONBool.cpp"
+                     "testJSONNull.cpp"
+                     "testJSONArray.cpp"
+                     "testJSONObject.cpp"
+                     "testStreamIO.cpp"
+                     "mustPassParsing.cpp"
+                     "mustFailParsing.cpp"
+                     "mayPassOrFailParsing.cpp"
+                     "mustTransformInput.cpp"
+    )
 
-    set(TEST_JSON_NUMBER_EXECUTABLE "testJSONNumber")
-    add_executable(${TEST_JSON_NUMBER_EXECUTABLE} "testJSONNumber.cpp")
-    target_link_libraries(${TEST_JSON_NUMBER_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_JSON_NUMBER_EXECUTABLE} COMMAND ${TEST_JSON_NUMBER_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+    foreach(SOURCE IN LISTS TEST_SOURCES)
+        get_filename_component(TEST_NAME ${SOURCE} NAME_WLE)
+        # message(STATUS "Creating test: " ${TEST_NAME} " from source: " ${SOURCE})
+        
+        add_executable(${TEST_NAME} ${SOURCE})
+        target_link_libraries(${TEST_NAME} PUBLIC simpleJSON)
+        # add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+        add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 
-    set(TEST_JSON_BOOL_EXECUTABLE "testJSONBool")
-    add_executable(${TEST_JSON_BOOL_EXECUTABLE} "testJSONBool.cpp")
-    target_link_libraries(${TEST_JSON_BOOL_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_JSON_BOOL_EXECUTABLE} COMMAND ${TEST_JSON_BOOL_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-    
-    set(TEST_JSON_NULL_EXECUTABLE "testJSONNull")
-    add_executable(${TEST_JSON_NULL_EXECUTABLE} "testJSONNull.cpp")
-    target_link_libraries(${TEST_JSON_NULL_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_JSON_NULL_EXECUTABLE} COMMAND ${TEST_JSON_NULL_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_JSON_ARRAY_EXECUTABLE "testJSONArray")
-    add_executable(${TEST_JSON_ARRAY_EXECUTABLE} "testJSONArray.cpp")
-    target_link_libraries(${TEST_JSON_ARRAY_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_JSON_ARRAY_EXECUTABLE} COMMAND ${TEST_JSON_ARRAY_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_JSON_OBJECT_EXECUTABLE "testJSONObject")
-    add_executable(${TEST_JSON_OBJECT_EXECUTABLE} "testJSONObject.cpp")
-    target_link_libraries(${TEST_JSON_OBJECT_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_JSON_OBJECT_EXECUTABLE} COMMAND ${TEST_JSON_OBJECT_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_STREAM_IO_EXECUTABLE "testStreamIO")
-    add_executable(${TEST_STREAM_IO_EXECUTABLE} "testStreamIO.cpp")
-    target_link_libraries(${TEST_STREAM_IO_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_STREAM_IO_EXECUTABLE} COMMAND ${TEST_STREAM_IO_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_MUST_PASS_PARSING_EXECUTABLE "mustPassParsing")
-    add_executable(${TEST_MUST_PASS_PARSING_EXECUTABLE} "mustPassParsing.cpp")
-    target_link_libraries(${TEST_MUST_PASS_PARSING_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_MUST_PASS_PARSING_EXECUTABLE} COMMAND ${TEST_MUST_PASS_PARSING_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_MUST_FAIL_PARSING_EXECUTABLE "mustFailParsing")
-    add_executable(${TEST_MUST_FAIL_PARSING_EXECUTABLE} "mustFailParsing.cpp")
-    target_link_libraries(${TEST_MUST_FAIL_PARSING_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_MUST_FAIL_PARSING_EXECUTABLE} COMMAND ${TEST_MUST_FAIL_PARSING_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_MAY_PASS_OR_FAIL_PARSING_EXECUTABLE "mayPassOrFailParsing")
-    add_executable(${TEST_MAY_PASS_OR_FAIL_PARSING_EXECUTABLE} "mayPassOrFailParsing.cpp")
-    target_link_libraries(${TEST_MAY_PASS_OR_FAIL_PARSING_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_MAY_PASS_OR_FAIL_PARSING_EXECUTABLE} COMMAND ${TEST_MAY_PASS_OR_FAIL_PARSING_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-
-    set(TEST_MUST_TRANSFORM_INPUT_EXECUTABLE "mustTransformInput")
-    add_executable(${TEST_MUST_TRANSFORM_INPUT_EXECUTABLE} "mustTransformInput.cpp")
-    target_link_libraries(${TEST_MUST_TRANSFORM_INPUT_EXECUTABLE} PUBLIC simpleJSON)
-    add_test(NAME ${TEST_MUST_TRANSFORM_INPUT_EXECUTABLE} COMMAND ${TEST_MUST_TRANSFORM_INPUT_EXECUTABLE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-    
+        # NOTE: code-coverage.cmake does not seem to work with test executables, so I had to edit 
+        # test file paths in the tests/*.cpp files to navigate to test cases from the build directory
+        # TODO: find a better way to do this 
+        if(ENABLE_COVERAGE_REPORT)
+            target_code_coverage(${TEST_NAME} AUTO ALL)
+        endif()
+    endforeach()
 endif()

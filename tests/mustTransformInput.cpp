@@ -7,7 +7,8 @@
 
 int main() {
 
-    std::filesystem::path dataPath("./test_transform");
+    // std::filesystem::path dataPath("./test_transform");
+    std::filesystem::path dataPath("../../tests/test_transform");
 
     std::cout << "===============================" << std::endl;
     std::cout << "Testing wierd cases" << std::endl;

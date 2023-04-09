@@ -6,8 +6,8 @@
 #include "simpleJSON/simpleJSON.hpp"
 
 int main() {
-
-    std::filesystem::path dataPath("./test_parsing");
+    // std::filesystem::path dataPath("./test_parsing");
+    std::filesystem::path dataPath("../../tests/test_parsing");
 
     std::cout << "===============================" << std::endl;
     std::cout << "Testing cases that are implementation defined" << std::endl;

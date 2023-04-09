@@ -7,7 +7,8 @@
 
 int main() {
 
-    std::filesystem::path dataPath("./test_parsing");
+    // std::filesystem::path dataPath("./test_parsing");
+    std::filesystem::path dataPath("../../tests/test_parsing");
 
     std::cout << "===============================" << std::endl;
     std::cout << "Testing cases that must work correctly" << std::endl;

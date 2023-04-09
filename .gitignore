@@ -3,3 +3,5 @@ test.txt
 
 .vscode
 build
+
+tests/default.profraw

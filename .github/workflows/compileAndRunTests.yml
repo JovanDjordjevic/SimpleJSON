@@ -1,0 +1,71 @@
+name: compileAndRunTests
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  buildOnLinuxWithGCC:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - name: 'Install lcov prerequisite'
+          run: sudo apt-get -y install lcov
+        - name: "Create build directory"
+          run: mkdir build 
+        - name: "Run CMake"
+          working-directory: build
+          run: cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTING=ON -DENABLE_COVERAGE_REPORT=ON ..
+        - name: "Build targets"
+          working-directory: build
+          run: cmake --build .
+        - name: "Generate coverage report"
+          working-directory: build
+          run: cmake --build . --target ccov-all
+        - name: "Save coverage report artifact"
+          uses: actions/upload-artifact@v3
+          with: 
+            name: code-coverage-report
+            path: build/ccov
+            retention-days: 1
+        - name: "Run tests"          # runs tests again, so results will be readable at the bottom of output
+          working-directory: build
+          run: ctest
+
+  buildOnWindowsWithMSVC:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ilammy/msvc-dev-cmd@v1
+        with: 
+          vsversion: 2022 
+      - name: "Create build directory"
+        run: mkdir build 
+      - name: "Run CMake"
+        working-directory: build
+        run: cmake -G "Visual Studio 17 2022" -DENABLE_TESTING=ON -DENABLE_COVERAGE_REPORT=OFF ..
+      - name: "Build targets"
+        working-directory: build
+        run: cmake --build . --target ALL_BUILD --config Release        # use Release config to avoid stopping workflow on errors that the library handles normally
+      - name: "Run tests"
+        working-directory: build
+        run: ctest --verbose -C Release     # use Release config to avoid stopping workflow on errors that the library handles normally
+
+  buildOnMacWithClang:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Create build directory"
+        run: mkdir build 
+      - name: "Run CMake"
+        working-directory: build
+        run: cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTING=ON ..
+      - name: "Build targets"
+        working-directory: build
+        run: cmake --build .
+      - name: "Run tests"
+        working-directory: build
+        run: ctest --verbose
