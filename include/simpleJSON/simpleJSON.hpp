@@ -50,14 +50,14 @@ namespace simpleJSON {
     class JSONException : public std::runtime_error {
         public:
             JSONException(const std::string& msg);
-            const char* what() const noexcept override;
+            [[nodiscard]] const char* what() const noexcept override;
     };
 
     class JSONString {
         public:
             JSONString();
             JSONString(const char* str);
-            JSONString(const std::string& str);
+            JSONString(std::string str);
 
             friend bool operator==(const JSONString& lhs, const JSONString& rhs);
             friend bool operator!=(const JSONString& lhs, const JSONString& rhs);
@@ -66,8 +66,8 @@ namespace simpleJSON {
             friend bool operator>(const JSONString& lhs, const JSONString& rhs);
             friend bool operator>=(const JSONString& lhs, const JSONString& rhs);
 
-            std::string getString() const;
-            std::string toString() const;
+            [[nodiscard]] std::string getString() const;
+            [[nodiscard]] std::string toString() const;
 
         private:
             std::string value;
@@ -86,9 +86,9 @@ namespace simpleJSON {
             friend bool operator>(const JSONNumber& lhs, const JSONNumber& rhs);
             friend bool operator>=(const JSONNumber& lhs, const JSONNumber& rhs);
 
-            JSONFloating getFloating() const;
-            JSONIntegral getIntegral() const;
-            std::string toString() const;
+            [[nodiscard]] JSONFloating getFloating() const;
+            [[nodiscard]] JSONIntegral getIntegral() const;
+            [[nodiscard]] std::string toString() const;
 
         private:
             std::variant<JSONFloating, JSONIntegral> value;
@@ -102,8 +102,8 @@ namespace simpleJSON {
             friend bool operator==(const JSONBool& lhs, const JSONBool& rhs);
             friend bool operator!=(const JSONBool& lhs, const JSONBool& rhs);
 
-            bool getBoolean() const;
-            std::string toString() const;
+            [[nodiscard]] bool getBoolean() const;
+            [[nodiscard]] std::string toString() const;
 
         private:
             bool value;
@@ -117,7 +117,7 @@ namespace simpleJSON {
             friend bool operator==(const JSONNull&, const JSONNull&);
             friend bool operator!=(const JSONNull&, const JSONNull&);
             
-            std::string toString() const;
+            [[nodiscard]] std::string toString() const;
     };
 
     class JSONArray {
@@ -128,7 +128,7 @@ namespace simpleJSON {
             template <typename T>
             void append(T&& arg);
             void pop();
-            size_t size() const;
+            [[nodiscard]] size_t size() const;
             void clear();
 
             JSONObject& operator[](const size_t index);
@@ -136,8 +136,8 @@ namespace simpleJSON {
             friend bool operator==(const JSONArray& lhs, const JSONArray& rhs);
             friend bool operator!=(const JSONArray& lhs, const JSONArray& rhs);
             
-            std::string toString() const;
-            std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
+            [[nodiscard]] std::string toString() const;
+            [[nodiscard]] std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
 
         private:
             std::vector<JSONObject> value;
@@ -162,10 +162,10 @@ namespace simpleJSON {
             template <typename T>
             void append(T&& arg);
             void pop();
-            size_t size() const;
+            [[nodiscard]] size_t size() const;
             void clear();
             void removeField(const JSONString& key);
-            size_t getNumberOfFields() const;
+            [[nodiscard]] size_t getNumberOfFields() const;
 
             JSONObject& operator[](const size_t index);
             const JSONObject& operator[](const size_t index) const;
@@ -178,8 +178,8 @@ namespace simpleJSON {
             friend bool operator>(const JSONObject& lhs, const JSONObject& rhs);
             friend bool operator>=(const JSONObject& lhs, const JSONObject& rhs);
 
-            std::string toString() const;
-            std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
+            [[nodiscard]] std::string toString() const;
+            [[nodiscard]] std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
 
         private:
             std::variant<JSONString, JSONNumber, JSONBool, JSONNull, JSONArray, std::map<JSONString, JSONObject>> value;
@@ -281,7 +281,7 @@ namespace simpleJSON {
 
     JSONString::JSONString() : value(std::string{}) { FUNCTRACE }
     JSONString::JSONString(const char* str) : value(std::string(str)) { FUNCTRACE }
-    JSONString::JSONString(const std::string& str) : value(str) { FUNCTRACE }
+    JSONString::JSONString(std::string str) : value(std::move(str)) { FUNCTRACE }
 
     std::string JSONString::getString() const {
         return value;
@@ -321,25 +321,27 @@ namespace simpleJSON {
     bool operator<(const JSONNumber& lhs, const JSONNumber& rhs) {
         // FIXME: find a better way to implement this method!!!
         // std::variant::operator< and operator > do not behave the way we need
-        auto& lhsValue = lhs.value;
-        auto& rhsValue = rhs.value;
+        const auto& lhsValue = lhs.value;
+        const auto& rhsValue = rhs.value;
 
         if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
             return std::get<JSONFloating>(lhsValue) < std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+        
+        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
             return std::get<JSONFloating>(lhsValue) < std::get<JSONIntegral>(rhsValue);
         }
-        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+        
+        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
             return std::get<JSONIntegral>(lhsValue) < std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+        
+        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
             return std::get<JSONIntegral>(lhsValue) < std::get<JSONIntegral>(rhsValue);
         }
-        else {
-            // should not get here
-            throw JSONException("Unexpected comparison on JSONNumber");
-        }
+        
+        // should not get here
+        throw JSONException("Unexpected comparison on JSONNumber");
     }
 
     bool operator<=(const JSONNumber& lhs, const JSONNumber& rhs) {
@@ -349,25 +351,27 @@ namespace simpleJSON {
     bool operator>(const JSONNumber& lhs, const JSONNumber& rhs) {
         // FIXME: find a better way to implement this method!!!
         // std::variant::operator< and operator > do not behave the way we need
-        auto& lhsValue = lhs.value;
-        auto& rhsValue = rhs.value;
+        const auto& lhsValue = lhs.value;
+        const auto& rhsValue = rhs.value;
         
         if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
             return std::get<JSONFloating>(lhsValue) > std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+        
+        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
             return std::get<JSONFloating>(lhsValue) > std::get<JSONIntegral>(rhsValue);
         }
-        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+        
+        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
             return std::get<JSONIntegral>(lhsValue) > std::get<JSONFloating>(rhsValue);
         }
-        else if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
+         
+        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
             return std::get<JSONIntegral>(lhsValue) > std::get<JSONIntegral>(rhsValue);
         }
-        else {
-            // should not get here
-            throw JSONException("Unexpected comparison on JSONNumber");
-        }
+
+        // should not get here
+        throw JSONException("Unexpected comparison on JSONNumber");
     }
 
     bool operator>=(const JSONNumber& lhs, const JSONNumber& rhs) {
@@ -378,18 +382,16 @@ namespace simpleJSON {
         if (std::holds_alternative<JSONFloating>(value)) {
             return std::get<JSONFloating>(value);
         }
-        else {
-            throw JSONException("This JSONNumber does not contain a floating point value");
-        }
+        
+        throw JSONException("This JSONNumber does not contain a floating point value");
     }
 
     JSONIntegral JSONNumber::getIntegral() const {
         if (std::holds_alternative<JSONIntegral>(value)) {
             return std::get<JSONIntegral>(value);
         }
-        else {
-            throw JSONException("This JSONNumber does not contain a signed integral value");
-        }
+       
+        throw JSONException("This JSONNumber does not contain a signed integral value");
     }
 
     std::string JSONNumber::toString() const {
@@ -427,7 +429,7 @@ namespace simpleJSON {
 
     // JSONNull
 
-    JSONNull::JSONNull() {}
+    JSONNull::JSONNull() = default;
     
     JSONNull::JSONNull(const std::nullptr_t) {}
 
@@ -474,18 +476,16 @@ namespace simpleJSON {
         if (index >= value.size()) {
             throw JSONException("JSONArray operator[] index out of range");
         }
-        else {
-            return value[index];
-        }
+        
+        return value[index];
     }
 
     const JSONObject& JSONArray::operator[](const size_t index) const {
         if (index >= value.size()) {
             throw JSONException("JSONArray operator[] index out of range");
         }
-        else {
-            return value.at(index);
-        }
+        
+        return value.at(index);
     }
 
     bool operator==(const JSONArray& lhs, const JSONArray& rhs) {
@@ -500,39 +500,37 @@ namespace simpleJSON {
         if (size() == 0) {
             return "[]";
         }
-        else {
-            std::string res = "[";
-         
-            for(auto& elem : value) {
-                res += elem.toString() + ",";
-            }
+        
+        std::string res = "[";
 
-            res.back() = ']';
-
-            return res;
+        for(const auto& elem : value) {
+            res += elem.toString() + ",";
         }
+
+        res.back() = ']';
+
+        return res;
     }
 
     std::string JSONArray::toIndentedString(std::string& currentIndentation, const std::string& indentString) const {
         if (size() == 0) {
             return "[]";
         }
-        else {
-            std::string res = "[\n";
+        
+        std::string res = "[\n";
 
-            currentIndentation += indentString;
+        currentIndentation += indentString;
 
-            for (auto& elem : value) {
-                res += currentIndentation + elem.toIndentedString(currentIndentation, indentString) + ",\n";
-            }
-
-            currentIndentation.erase(currentIndentation.length() - indentString.length());
-
-            res.erase(res.length() - 2);
-            res += "\n" + currentIndentation + "]";
-
-            return res;
+        for (const auto& elem : value) {
+            res += currentIndentation + elem.toIndentedString(currentIndentation, indentString) + ",\n";
         }
+
+        currentIndentation.erase(currentIndentation.length() - indentString.length());
+
+        res.erase(res.length() - 2);
+        res += "\n" + currentIndentation + "]";
+
+        return res;
     }
 
     // JSONObject
@@ -556,11 +554,10 @@ namespace simpleJSON {
         if (std::holds_alternative<JSONArray>(value)) {
             auto& arr = std::get<JSONArray>(value);
             arr.append(std::forward<T>(arg));
+            return;
         }
-        else {
-            throw JSONException("Cannot append. Current object is not an array");
-        }
-        return;
+        
+        throw JSONException("Cannot append. Current object is not an array");
     }
 
     void JSONObject::pop() {
@@ -569,19 +566,17 @@ namespace simpleJSON {
             arr.pop();
             return;
         }
-        else {
-            throw JSONException("Cannot pop. Current JSONObject does not hold an array");
-        }
+
+        throw JSONException("Cannot pop. Current JSONObject does not hold an array");
     }
 
     size_t JSONObject::size() const {
         if (std::holds_alternative<JSONArray>(value)) {
-            auto& arr = std::get<JSONArray>(value);
+            const auto& arr = std::get<JSONArray>(value);
             return arr.size();
         }
-        else {
-            throw JSONException("Current JSONObject is not an array, cannot call size()");
-        }
+        
+        throw JSONException("Current JSONObject is not an array, cannot call size()");
     }
     
     void JSONObject::clear() {
@@ -589,9 +584,8 @@ namespace simpleJSON {
             auto& arr = std::get<JSONArray>(value);
             return arr.clear();
         }
-        else {
-            throw JSONException("Current JSONObject is not an array, cannot call clear()");
-        }
+        
+        throw JSONException("Current JSONObject is not an array, cannot call clear()");
     }
 
     void JSONObject::removeField(const JSONString& key) {
@@ -602,22 +596,21 @@ namespace simpleJSON {
             if (it != std::end(map)) {
                 map.erase(it);
             }
+
+            return;
         }
-        else {
-            throw JSONException("Removing field failed, this JSONObject is not a map");
-        }
-        return;
+        
+        throw JSONException("Removing field failed, this JSONObject is not a map");      
     }
 
     
     size_t JSONObject::getNumberOfFields() const {
         if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
-            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+            const auto& map = std::get<std::map<JSONString, JSONObject>>(value);
             return map.size();
         }
-        else {
-            throw JSONException("Removing field failed, this JSONObject is not a map");
-        }
+        
+        throw JSONException("Removing field failed, this JSONObject is not a map");
     }
 
     JSONObject& JSONObject::operator[](const size_t index) {
@@ -625,19 +618,17 @@ namespace simpleJSON {
             auto& arr = std::get<JSONArray>(value);
             return arr[index];
         }
-        else {
-            throw JSONException("Operator[] failed, this JSONObject is not an array");
-        }
+
+        throw JSONException("Operator[] failed, this JSONObject is not an array");
     }
 
     const JSONObject& JSONObject::operator[](const size_t index) const {
         if (std::holds_alternative<JSONArray>(value)) {
-            auto& arr = std::get<JSONArray>(value);
+            const auto& arr = std::get<JSONArray>(value);
             return arr[index];
         }
-        else {
-            throw JSONException("Operator[] failed, this JSONObject is not an array");
-        }
+        
+        throw JSONException("Operator[] failed, this JSONObject is not an array");
     }
 
     JSONObject& JSONObject::operator[](const JSONString& key) {
@@ -645,19 +636,17 @@ namespace simpleJSON {
             auto& map = std::get<std::map<JSONString, JSONObject>>(value);
             return map[key];
         }
-        else {
-            throw JSONException("Operator[] failed, this JSONObject is not a map");
-        }
+       
+        throw JSONException("Operator[] failed, this JSONObject is not a map");
     }
 
     const JSONObject& JSONObject::operator[](const JSONString& key) const {
         if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
-            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+            const auto& map = std::get<std::map<JSONString, JSONObject>>(value);
             return map.at(key);
         }
-        else {
-            throw JSONException("Operator[] failed, this JSONObject is not a map");
-        }
+        
+        throw JSONException("Operator[] failed, this JSONObject is not a map");
     }   
 
     bool operator==(const JSONObject& lhs, const JSONObject& rhs) {
@@ -669,18 +658,18 @@ namespace simpleJSON {
     }
 
     bool operator<(const JSONObject& lhs, const JSONObject& rhs) {
-        auto& lhsValue = lhs.value;
-        auto& rhsValue = rhs.value;
+        const auto& lhsValue = lhs.value;
+        const auto& rhsValue = rhs.value;
         
         if (std::holds_alternative<JSONString>(lhsValue) && std::holds_alternative<JSONString>(rhsValue)) {
             return std::get<JSONString>(lhsValue) < std::get<JSONString>(rhsValue);
         }
-        else if (std::holds_alternative<JSONNumber>(lhsValue) && std::holds_alternative<JSONNumber>(rhsValue)) {
+        
+        if (std::holds_alternative<JSONNumber>(lhsValue) && std::holds_alternative<JSONNumber>(rhsValue)) {
             return std::get<JSONNumber>(lhsValue) < std::get<JSONNumber>(rhsValue);
         }
-        else {
-            throw JSONException("JSONObjects must hold JSONString or JSONNumber to use operator<");
-        }
+        
+        throw JSONException("JSONObjects must hold JSONString or JSONNumber to use operator<");
     }
 
     bool operator<=(const JSONObject& lhs, const JSONObject& rhs) {
@@ -688,18 +677,18 @@ namespace simpleJSON {
     }
 
     bool operator>(const JSONObject& lhs, const JSONObject& rhs) {
-        auto& lhsValue = lhs.value;
-        auto& rhsValue = rhs.value;
+        const auto& lhsValue = lhs.value;
+        const auto& rhsValue = rhs.value;
         
         if (std::holds_alternative<JSONString>(lhsValue) && std::holds_alternative<JSONString>(rhsValue)) {
             return std::get<JSONString>(lhsValue) > std::get<JSONString>(rhsValue);
         }
-        else if (std::holds_alternative<JSONNumber>(lhsValue) && std::holds_alternative<JSONNumber>(rhsValue)) {
+        
+        if (std::holds_alternative<JSONNumber>(lhsValue) && std::holds_alternative<JSONNumber>(rhsValue)) {
             return std::get<JSONNumber>(lhsValue) > std::get<JSONNumber>(rhsValue);
         }
-        else {
-            throw JSONException("JSONObjects must hold JSONString or JSONNumber to use operator>");
-        }
+        
+        throw JSONException("JSONObjects must hold JSONString or JSONNumber to use operator>");
     }
 
     bool operator>=(const JSONObject& lhs, const JSONObject& rhs) {
@@ -710,35 +699,39 @@ namespace simpleJSON {
         if (std::holds_alternative<JSONString>(value)) {
             return std::get<JSONString>(value).toString();
         }
-        else if (std::holds_alternative<JSONNumber>(value)) {
+        
+        if (std::holds_alternative<JSONNumber>(value)) {
             return std::get<JSONNumber>(value).toString();
         }
-        else if (std::holds_alternative<JSONBool>(value)) {
+        
+        if (std::holds_alternative<JSONBool>(value)) {
             return std::get<JSONBool>(value).toString();
         }
-        else if (std::holds_alternative<JSONNull>(value)) {
+        
+        if (std::holds_alternative<JSONNull>(value)) {
             return std::get<JSONNull>(value).toString();
         }
-        else if (std::holds_alternative<JSONArray>(value)) {
+        
+        if (std::holds_alternative<JSONArray>(value)) {
             return std::get<JSONArray>(value).toString();
         }
-        else if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
-            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+        
+        if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
+            const auto& map = std::get<std::map<JSONString, JSONObject>>(value);
             
-            if (map.size() == 0) {
+            if (map.empty()) {
                 return "{}";
             }
-            else {
-                std::string res = "{";
 
-                for (auto& [key, val] : map) {
-                    res += key.toString() + ":" + val.toString() + ",";
-                }
+            std::string res = "{";
 
-                res.back() = '}';
-                
-                return res;
+            for (const auto& [key, val] : map) {
+                res += key.toString() + ":" + val.toString() + ",";
             }
+
+            res.back() = '}';
+                
+            return res;
         }
         
         // should not get here
@@ -749,40 +742,44 @@ namespace simpleJSON {
         if (std::holds_alternative<JSONString>(value)) {
             return std::get<JSONString>(value).toString();
         }
-        else if (std::holds_alternative<JSONNumber>(value)) {
+        
+        if (std::holds_alternative<JSONNumber>(value)) {
             return std::get<JSONNumber>(value).toString();
         }
-        else if (std::holds_alternative<JSONBool>(value)) {
+        
+        if (std::holds_alternative<JSONBool>(value)) {
             return std::get<JSONBool>(value).toString();
         }
-        else if (std::holds_alternative<JSONNull>(value)) {
+        
+        if (std::holds_alternative<JSONNull>(value)) {
             return std::get<JSONNull>(value).toString();
         }
-        else if (std::holds_alternative<JSONArray>(value)) {
+        
+        if (std::holds_alternative<JSONArray>(value)) {
             return std::get<JSONArray>(value).toIndentedString(currentIndentation, indentString);
         }
-        else if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
-            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+        
+        if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
+            const auto& map = std::get<std::map<JSONString, JSONObject>>(value);
 
-            if (map.size() == 0) {
+            if (map.empty()) {
                 return "{}";
             }
-            else {
-                std::string res = "{\n";
+            
+            std::string res = "{\n";
 
-                currentIndentation += indentString;
+            currentIndentation += indentString;
 
-                for (auto& [key, val] : map) {
-                    res += currentIndentation + key.toString() + " : " + val.toIndentedString(currentIndentation, indentString) + ",\n";
-                }
-
-                currentIndentation.erase(currentIndentation.length() - indentString.length());
-
-                res.erase(res.length() - 2);
-                res += "\n" + currentIndentation + "}";
-                
-                return res;
+            for (const auto& [key, val] : map) {
+                res += currentIndentation + key.toString() + " : " + val.toIndentedString(currentIndentation, indentString) + ",\n";
             }
+
+            currentIndentation.erase(currentIndentation.length() - indentString.length());
+
+            res.erase(res.length() - 2);
+            res += "\n" + currentIndentation + "}";
+                
+            return res;
         }
         
         // should not get here
@@ -906,7 +903,7 @@ namespace internal {
             throw simpleJSON::JSONException("Error while parsing number, missing digit before decimal point");
         }
 
-        char* afterEnd;
+        char* afterEnd = nullptr;
         simpleJSON::JSONFloating result = std::strtold(str.c_str(), &afterEnd);
 
         if (*afterEnd != '\0') {
@@ -921,8 +918,9 @@ namespace internal {
             throw simpleJSON::JSONException("Error while parsing number, integer cannot start with 0");
         }
 
-        char* afterEnd;
-        simpleJSON::JSONIntegral result = std::strtoll(str.c_str(), &afterEnd, 10);
+        char* afterEnd = nullptr;
+        const int base = 10;
+        simpleJSON::JSONIntegral result = std::strtoll(str.c_str(), &afterEnd, base);
             
         if (*afterEnd != '\0') {
             throw simpleJSON::JSONException("Error while parsing number, invalid integer");
@@ -934,7 +932,7 @@ namespace internal {
     simpleJSON::JSONString parseString__internal(std::istream& stream) {
         FUNCTRACE
 
-        char currentChar;
+        char currentChar{};
         stream.get(currentChar);
 
         if (currentChar != '"') {
@@ -949,7 +947,7 @@ namespace internal {
 
         while (stream) {
             if (numHexDigitsToRead > 0) {
-                if (!std::isxdigit(static_cast<unsigned char>(currentChar))) {
+                if (!static_cast<bool>(std::isxdigit(static_cast<unsigned char>(currentChar)))) {
                     throw simpleJSON::JSONException("\\u must be followed by 4 hex characters");
                 }
                 
@@ -959,7 +957,8 @@ namespace internal {
             if (currentChar == '"' && !currentCharIsEscaped) {
                 return result;
             }
-
+            
+            // control characters are in range [0, 31]
             if (0 <= static_cast<int>(currentChar) && static_cast<int>(currentChar) <= 31) {
                 throw simpleJSON::JSONException("Error while parsing string, unescaped control character");
             }
@@ -995,7 +994,7 @@ namespace internal {
         short dotCount = 0;
         short eCount = 0;
 
-        while (isdigit(c) || c == '.' || c == '-' || c == 'e' || c == 'E' || c == '+') {
+        while (static_cast<bool>(isdigit(c)) || c == '.' || c == '-' || c == 'e' || c == 'E' || c == '+') {
             if (c == '.') {
                 ++dotCount;
             }
@@ -1012,15 +1011,18 @@ namespace internal {
         if (dotCount != 0 || eCount != 0) {
             return simpleJSON::JSONNumber{internal::strToJSONFloating__internal(numberAsString)};
         }
-        else {
-            return simpleJSON::JSONNumber{internal::strToJSONIntegral__internal(numberAsString)};
-        }
+        
+        return simpleJSON::JSONNumber{internal::strToJSONIntegral__internal(numberAsString)};
     }
     
     simpleJSON::JSONBool parseBool__internal(std::istream& stream) {
         FUNCTRACE
 
-        char c1, c2, c3, c4;
+        char c1{};  
+        char c2{};  
+        char c3{};  
+        char c4{};  
+
         stream.get(c1);
         stream.get(c2);
         stream.get(c3);
@@ -1031,8 +1033,9 @@ namespace internal {
         if (out == "true") {
             return simpleJSON::JSONBool(true);
         }
-        else if (out[0] == 'f') {
-            char c5;
+        
+        if (out[0] == 'f') {
+            char c5{};
             stream.get(c5);
 
             out += c5;
@@ -1042,13 +1045,17 @@ namespace internal {
             } 
         }
 
-        throw simpleJSON::JSONException("Error while parsing bool, expected \"true\" or \"false\", got \"" + out + "\"");
+        throw simpleJSON::JSONException(R"(Error while parsing bool, expected "true" or "false", got ")" + out + "\"");
     }
     
     simpleJSON::JSONNull parseNull__internal(std::istream& stream) {
         FUNCTRACE
 
-        char c1, c2, c3, c4;
+        char c1{};  
+        char c2{};  
+        char c3{};  
+        char c4{};  
+
         stream.get(c1);
         stream.get(c2);
         stream.get(c3);
@@ -1057,7 +1064,7 @@ namespace internal {
         std::string out = {c1, c2, c3, c4};
 
         if (out != "null") {
-            throw simpleJSON::JSONException("Error while parsing null, expected \"null\", got \"" + out + "\"");
+            throw simpleJSON::JSONException(R"(Error while parsing null, expected "null", got ")" + out + "\"");
         }
 
         return simpleJSON::JSONNull{};
@@ -1066,7 +1073,7 @@ namespace internal {
     simpleJSON::JSONArray parseArray__internal(std::istream& stream) {
         FUNCTRACE
 
-        char c;
+        char c{};
         stream.get(c);
 
         if (c != '[') {
@@ -1088,19 +1095,17 @@ namespace internal {
                     lastReadWasComma = true;
                     continue;
                 }
-                else {
-                    throw simpleJSON::JSONException("Unexpected comma when parsing array");
-                }
+                
+                throw simpleJSON::JSONException("Unexpected comma when parsing array");
             }
 
             if (c == ']') {
                 if (lastReadWasComma) {
                     throw simpleJSON::JSONException("Trailing comma not allowed in array");
                 }
-                else {
-                    stream.get(c);
-                    return result;
-                }
+                
+                stream.get(c);
+                return result;
             }
 
             if (expectingComma) {
@@ -1148,7 +1153,7 @@ namespace internal {
     simpleJSON::JSONObject parseObject__internal(std::istream& stream) {
         FUNCTRACE
 
-        char next;
+        char next{};
         stream.get(next);
 
         if (next != '{') {
@@ -1166,6 +1171,7 @@ namespace internal {
                 if (lastReadWasComma) {
                     throw simpleJSON::JSONException("Trailing comma not allowed in object");
                 }
+
                 stream.get();
                 return result;
             }
@@ -1229,12 +1235,12 @@ namespace internal {
                 lastReadWasComma = true;
                 continue;
             }
-            else if (next == '}') {
+            
+            if (next == '}') {
                 break;
             }
-            else {
-                throw simpleJSON::JSONException("Error while parsing object, unexpected next character '" + std::string{next} + "'");
-            }
+            
+            throw simpleJSON::JSONException("Error while parsing object, unexpected next character '" + std::string{next} + "'");
         }
         
         return result;
