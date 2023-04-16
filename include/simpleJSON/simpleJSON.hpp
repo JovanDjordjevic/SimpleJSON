@@ -25,6 +25,7 @@
 
 //------------------------------------- API -------------------------------------
 
+/// @brief Namespace containing all relevant classes and functions
 namespace simpleJSON {
     class JSONString;
     class JSONNumber;
@@ -33,28 +34,56 @@ namespace simpleJSON {
     class JSONArray;
     class JSONObject;
 
-    // When changing what types are used as JSONFloating and JSONIntegral, also change how they are parsed
-    // in strToJSONFloating__internal and strToJSONIntegral__internal
+    /// @brief Type used to represent floating point numbers.
+    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONFloating__internal) 
     using JSONFloating = long double;
+    /// @brief Type used to represent both positive and negative whole numbers.
+    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONIntegral__internal) 
     using JSONIntegral = long long int;
 
-    // You may change this to suit your needs
+    /// @brief Default string used for indentation
+    /// @details This string will be appended once per indent level.
     const std::string defaultIndentString = "\t";
 
+    /// @brief Function to parse a json file
+    /// @details Throws JSONException if anything goes wrong
+    /// @param[in] fileName File to parse
+    /// @return A JSONObject representing data contained in the file
     JSONObject parseFromFile(const std::filesystem::path& fileName);
+
+    /// @brief Function to parse a string containing json data
+    /// @details Throws JSONException if anything goes wrong
+    /// @param[in] jsonString String to parse
+    /// @return A JSONObject representing data contained in the string
     JSONObject parseFromString(const std::string& jsonString);
-    // void dumpToFile(const char* fileName);
+
+    /// @brief Convenience function to represent a json object as a non-formatted string
+    /// @details Throws JSONException if anything goes wrong
+    /// @param[in] obj Object to turn into a string
+    /// @return String representation of json object
     std::string dumpToString(const JSONObject& obj);
+
+    /// @brief Convenience function to represent a json object as an indented string
+    /// @details Throws JSONException if anything goes wrong
+    /// @param[in] obj Object to turn into a string
+    /// @param[in] indentString What indentation to use (defaults to one tab per indent level)
+    /// @return String representation of json object
     std::string dumpToPrettyString(const JSONObject& obj, const std::string& indentString = defaultIndentString);
 
+    /// @brief Class to represent various exceptions thrown by library functions
     class JSONException : public std::runtime_error {
         public:
             JSONException(const std::string& msg);
+            /// @brief Override of std::runtime_error::what
+            /// @return Message contained within the exception
             [[nodiscard]] const char* what() const noexcept override;
     };
 
+    /// @brief Class to represent json strings
+    /// @details Internally holds a std::string
     class JSONString {
         public:
+            /// @brief Default constructor creates an empty string
             JSONString();
             JSONString(const char* str);
             JSONString(std::string str);
@@ -65,17 +94,27 @@ namespace simpleJSON {
             friend bool operator<=(const JSONString& lhs, const JSONString& rhs);
             friend bool operator>(const JSONString& lhs, const JSONString& rhs);
             friend bool operator>=(const JSONString& lhs, const JSONString& rhs);
-
+            
+            /// @brief Getter for the underlying std::string
+            /// @return The underlying std::string
             [[nodiscard]] std::string getString() const;
+            /// @brief Convert to string as specified in the json standard 
+            /// @return A string surrounded by double quotes
             [[nodiscard]] std::string toString() const;
 
         private:
             std::string value;
     };
 
+    /// @brief Class to represent json numbers
+    /// @details Internally, holds either a floating or integer value
+    ///          represented by JSONFloating or JSONIntegral respectively
     class JSONNumber {
         public:
+            /// @brief Default constructor creates integer with value 0
             JSONNumber();
+            /// @brief Constructor that only allows numerical types
+            /// @details Will throw JSONException if other types are used
             template <typename N, typename = typename std::enable_if_t<std::is_floating_point_v<N> || std::is_integral_v<N>>>
             JSONNumber(const N& num);
 
@@ -86,29 +125,46 @@ namespace simpleJSON {
             friend bool operator>(const JSONNumber& lhs, const JSONNumber& rhs);
             friend bool operator>=(const JSONNumber& lhs, const JSONNumber& rhs);
 
+            /// @brief Getter for the underlying floating point number
+            /// @details Only valid if JSONNumber actually contains a floating point value, otherwise throws a JSONException
+            /// @return The underlying JSONFloating
             [[nodiscard]] JSONFloating getFloating() const;
+            /// @brief Getter for the underlying integer number
+            /// @details Only valid if JSONNumber actually contains an integer value, otherwise throws a JSONException
+            /// @return The underlying JSONIntegral
             [[nodiscard]] JSONIntegral getIntegral() const;
+            /// @brief Convert to string as specified in the json standard 
+            /// @return String representation of underlying value
             [[nodiscard]] std::string toString() const;
 
         private:
             std::variant<JSONFloating, JSONIntegral> value;
     };
 
+    /// @brief Class to represent json booleans
+    /// @details Internally, holds a bool
     class JSONBool {
         public:
+            /// @brief Default constructor creates boolean that holds false
             JSONBool();
             JSONBool(const bool val);
 
             friend bool operator==(const JSONBool& lhs, const JSONBool& rhs);
             friend bool operator!=(const JSONBool& lhs, const JSONBool& rhs);
-
+            
+            /// @brief Getter for the underlying boolean
+            /// @return The underlying bool
             [[nodiscard]] bool getBoolean() const;
+            /// @brief Convert to string as specified in the json standard 
+            /// @return String containing either true or false
             [[nodiscard]] std::string toString() const;
 
         private:
             bool value;
     };
 
+    /// @brief Class to represent json nulls
+    /// @details Internally, this is just an empty object
     class JSONNull {
         public:
             JSONNull();
@@ -117,34 +173,67 @@ namespace simpleJSON {
             friend bool operator==(const JSONNull&, const JSONNull&);
             friend bool operator!=(const JSONNull&, const JSONNull&);
             
+            /// @brief Convert to string as specified in the json standard 
+            /// @return String containing null
             [[nodiscard]] std::string toString() const;
     };
 
+    /// @brief Class to represent json arrays
+    /// @details Internally, holds a std::vector of JSONObject-s
     class JSONArray {
         public:
+            /// @brief Default constructor creates an empty array
             JSONArray();
+            /// @brief Array can be contructed from an initializer list
+            /// @note Currently, if you wish to construct a JSONObject
+            ///       and not rely on type deduction you must explicitly
+            ///       call the JSONObject constructor
             JSONArray(const std::initializer_list<JSONObject> list);
 
+            /// @brief Append anything that can be deduced as JSONObject to this array
+            /// @param[in] arg Element to append to this array
             template <typename T>
             void append(T&& arg);
+            /// @brief Remove element from the back of the array
             void pop();
+            /// @brief Get number of elements in the array
+            /// @return Number of elements in the array
             [[nodiscard]] size_t size() const;
+            /// @brief Remove all elements from the array
             void clear();
 
+            /// @brief Access the element at specified index
+            /// @details Throws JSONException if index is greater than size
+            /// @param[in] index Index to access
             JSONObject& operator[](const size_t index);
+            /// @brief Constant acces to element at specified index
+            /// @details Throws JSONException if index is greater than size
+            /// @param[in] index Index to access
             const JSONObject& operator[](const size_t index) const;
+            
             friend bool operator==(const JSONArray& lhs, const JSONArray& rhs);
             friend bool operator!=(const JSONArray& lhs, const JSONArray& rhs);
             
+            /// @brief Convert to string as specified in the json standard 
+            /// @return String representation of underlying array
             [[nodiscard]] std::string toString() const;
+            /// @brief Convert to indented string as specified in the json standard 
+            /// @return String representation of underlying array
             [[nodiscard]] std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
 
         private:
             std::vector<JSONObject> value;
     };
 
+    /// @brief Class to represent json objects
+    /// @details This is the main class the user should interact with
+    ///          Internally it holds one of the json standard types:
+    ///          string, number, boolean, null, array or map of key-value pairs.
+    ///          Because JSONObject may contain different types with different methods
+    ///          all those methods must be implemented in this class as well
     class JSONObject {
         public:
+            /// @brief Default constructor creates an empty map
             JSONObject();
             JSONObject(const char* str);
             JSONObject(const std::string& str);
@@ -159,18 +248,47 @@ namespace simpleJSON {
             JSONObject(const JSONArray& arr);
             JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list);
 
+            /// @brief Append anything that can be deduced as JSONObject to array contained in this object 
+            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
+            /// @param[in] arg Element to append to this array
             template <typename T>
             void append(T&& arg);
+            /// @brief Remove element from the back of the array contained in this object
+            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
             void pop();
+             /// @brief Get number of elements in the array contained in this object
+            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
+            /// @return Number of elements in the array
             [[nodiscard]] size_t size() const;
+            /// @brief Remove all elements from the array contained in this object
+            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
             void clear();
-            void removeField(const JSONString& key);
-            [[nodiscard]] size_t getNumberOfFields() const;
 
+            /// @brief Remove specific entry from map conained in this object
+            /// @details Only valid if this JSONObject holds a map, otherwise throws a JSONException
+            void removeField(const JSONString& key);
+            /// @brief Get number of entries in a map conained in this object
+            /// @details Only valid if this JSONObject holds a map, otherwise throws a JSONException
+            /// @return Number of entries in map
+            [[nodiscard]] size_t getNumberOfFields() const;
+            
+            /// @brief Access the element at specified index in array conained in this object
+            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
+            /// @param[in] index Index to access
             JSONObject& operator[](const size_t index);
+            /// @brief Constant access the element at specified index in array conained in this object
+            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
+            /// @param[in] index Index to access
             const JSONObject& operator[](const size_t index) const;
+            /// @brief Access the value at specified key in map conained in this object
+            /// @details Only valid if this JSONObject holds a map, otherwise throws a JSONException
+            /// @param[in] key Key to access
             JSONObject& operator[](const JSONString& key);
+            /// @brief Constant access the value at specified key in map conained in this object
+            /// @details Only valid if this JSONObject holds a map, otherwise throws a JSONException
+            /// @param[in] key Key to access
             const JSONObject& operator[](const JSONString& key) const;
+
             friend bool operator==(const JSONObject& lhs, const JSONObject& rhs);
             friend bool operator!=(const JSONObject& lhs, const JSONObject& rhs);
             friend bool operator<(const JSONObject& lhs, const JSONObject& rhs);
@@ -178,7 +296,13 @@ namespace simpleJSON {
             friend bool operator>(const JSONObject& lhs, const JSONObject& rhs);
             friend bool operator>=(const JSONObject& lhs, const JSONObject& rhs);
 
+            /// @brief Convert to string as specified in the json standard 
+            /// @details Format of string depends on the type contained within this object
+            /// @return String representation of underlying object
             [[nodiscard]] std::string toString() const;
+            /// @brief Convert to indented string as specified in the json standard 
+            /// @details Format of string depends on the type contained within this object
+            /// @return String representation of underlying object
             [[nodiscard]] std::string toIndentedString(std::string& currentIndentation, const std::string& indentString) const;
 
         private:

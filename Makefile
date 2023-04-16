@@ -2,6 +2,7 @@ BUILD_TYPE_LINUX = Debug
 # BUILD_TYPE_LINUX = Release
 GENERATOR_LINUX = "Unix Makefiles"
 
+ENABLE_DOXYGEN_LINUX = ON
 ENABLE_TESTING_LINUX = ON
 ENABLE_COVERAGE_REPORT_LINUX = ON
 
@@ -11,11 +12,13 @@ do_cmake_linux:
 	cd build &&	\
 	cmake -G $(GENERATOR_LINUX) \
 		  -DCMAKE_BUILD_TYPE=$(BUILD_TYPE_LINUX) \
+		  -DENABLE_DOXYGEN=$(ENABLE_DOXYGEN_LINUX) \
 		  -DENABLE_TESTING=$(ENABLE_TESTING_LINUX) \
 		  -DENABLE_COVERAGE_REPORT=$(ENABLE_COVERAGE_REPORT_LINUX) \
 		  .. && \
 	cmake --build . && \
 	cmake --build . --target ccov-all && \
+	cmake --build . --target docs && \
 	ctest --verbose
 #	ctest -T Test -T Coverage
 

@@ -21,6 +21,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)                   # NOTE: does nothing if 
 set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 # optional targets
+option(ENABLE_DOXYGEN "Create doxygen documentation target" OFF)
 option(ENABLE_TESTING "Build the test executables" ON)
 option(ENABLE_COVERAGE_REPORT "Create code coverage report for tests" ON)   # requires lcov for GNU and llvm-cov for [Apple]Clang compilers
 
@@ -71,6 +72,10 @@ else()
 endif()
 
 add_subdirectory(include)
+
+if(ENABLE_DOXYGEN)
+    include(docs)
+endif()
 
 if(ENABLE_TESTING)
     if(ENABLE_COVERAGE_REPORT)
