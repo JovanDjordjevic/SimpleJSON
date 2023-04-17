@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['parsefromfile_28',['parseFromFile',['../namespacesimpleJSON.html#a7d0a8e7dfde608e43ce86448032f8ccf',1,'simpleJSON']]],
-  ['parsefromstring_29',['parseFromString',['../namespacesimpleJSON.html#a5e79203be3410bd430a7587f4406028c',1,'simpleJSON']]],
-  ['pop_30',['pop',['../classsimpleJSON_1_1JSONArray.html#abef89e808ec72196963cbbc0678d4b0c',1,'simpleJSON::JSONArray::pop()'],['../classsimpleJSON_1_1JSONObject.html#ae507e55eccf1d211eee7ea0260c478b3',1,'simpleJSON::JSONObject::pop()']]]
+  ['readme_2emd_28',['README.md',['../README_8md.html',1,'']]],
+  ['removefield_29',['removeField',['../classsimpleJSON_1_1JSONObject.html#a9a97d8996b44b8f6e50c10ad7990b5de',1,'simpleJSON::JSONObject']]]
 ];

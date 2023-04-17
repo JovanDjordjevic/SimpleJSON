@@ -18,8 +18,8 @@ void testJSONObject() {
     std::string someString2("some std string");
     JSONString jsonStr1("some json str");
     JSONFloating f1 = 0.22e13;
-    JSONIntegral ud1 = 123;
-    JSONIntegral sd1 = -123;
+    JSONInteger ud1 = 123;
+    JSONInteger sd1 = -123;
     JSONNumber jsonNum1(-2);
     JSONBool jsonBool1(true);
     JSONArray jsonArr1;
@@ -27,7 +27,7 @@ void testJSONObject() {
     jsonArr1.append(someString1);
 
     // constructors
-    JSONObject obj0;                                                        assert(obj0.getNumberOfFields() == 0);
+    JSONObject obj0;                                                        assert(obj0.size() == 0);
     JSONObject obj1("some other string literal");
     JSONObject obj2(someString1);
     JSONObject obj3(std::string("some other std string"));
@@ -50,10 +50,10 @@ void testJSONObject() {
     JSONObject aaaaaa(NULL);
     JSONObject obj20(JSONArray{});
     JSONObject obj21(jsonArr1);
-    JSONObject obj22(JSONObject{});                                         assert(obj22.getNumberOfFields() == 0);
+    JSONObject obj22(JSONObject{});                                         assert(obj22.size() == 0);
         JSONObject tmp;
         tmp["key1"] = JSONString("value1");
-    JSONObject obj23(tmp);                                                  assert(obj23.getNumberOfFields() == 1);
+    JSONObject obj23(tmp);                                                  assert(obj23.size() == 1);
         const char* key2 = "key2";
         std::string key4 = "key4";
         JSONString key6("key6");
@@ -72,11 +72,11 @@ void testJSONObject() {
             {"key9",  {{"k1", 1}, {"k2", 2}}   }
         };
 
-    assert(o.getNumberOfFields() == 9);
-    assert(o["key9"].getNumberOfFields() == 2);
+    assert(o.size() == 9);
+    assert(o["key9"].size() == 2);
     o.removeField("key1");                                                  
-    assert(o.getNumberOfFields() == 8);
-    assert(o["nonExistantField"].getNumberOfFields() == 0);         // NOTE: operator[] will create a default json object if the key does not exist
+    assert(o.size() == 8);
+    assert(o["nonExistantField"].size() == 0);         // NOTE: operator[] will create a default json object if the key does not exist
 
     // assignment
     obj1 = "some String";
@@ -103,6 +103,7 @@ void testJSONObject() {
     o["key6"].pop();                                                        assert(o["key6"].size() == 1);
     o["key6"][0] = "str";                                                   assert(o["key6"].size() == 1 && o["key6"][0] == "str");  
     o["key6"].clear();                                                      assert(o["key6"].size() == 0);  
+    o.clear();                                                              assert(o.size() == 0);
 
     // comparison
     assert(obj1 == obj23);

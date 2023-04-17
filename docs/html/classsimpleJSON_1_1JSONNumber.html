@@ -93,17 +93,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa332bf58e798c1844898d2d1ec17823a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacesimpleJSON.html#a267edfed460fd45f035a266b36a3f969">JSONFloating</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimpleJSON_1_1JSONNumber.html#aa332bf58e798c1844898d2d1ec17823a">getFloating</a> () const</td></tr>
 <tr class="memdesc:aa332bf58e798c1844898d2d1ec17823a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Getter for the underlying floating point number.  <a href="classsimpleJSON_1_1JSONNumber.html#aa332bf58e798c1844898d2d1ec17823a">More...</a><br /></td></tr>
 <tr class="separator:aa332bf58e798c1844898d2d1ec17823a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7758a296fe6c4e18e28fd122966607d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacesimpleJSON.html#a723058987c3ec18758b742fdd299d82e">JSONIntegral</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimpleJSON_1_1JSONNumber.html#a7758a296fe6c4e18e28fd122966607d5">getIntegral</a> () const</td></tr>
-<tr class="memdesc:a7758a296fe6c4e18e28fd122966607d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Getter for the underlying integer number.  <a href="classsimpleJSON_1_1JSONNumber.html#a7758a296fe6c4e18e28fd122966607d5">More...</a><br /></td></tr>
-<tr class="separator:a7758a296fe6c4e18e28fd122966607d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab525ae626622b9b8917c75ba89109a45"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacesimpleJSON.html#a46673ebf501633453f15f4fe256f5189">JSONInteger</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimpleJSON_1_1JSONNumber.html#ab525ae626622b9b8917c75ba89109a45">getInteger</a> () const</td></tr>
+<tr class="memdesc:ab525ae626622b9b8917c75ba89109a45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Getter for the underlying integer number.  <a href="classsimpleJSON_1_1JSONNumber.html#ab525ae626622b9b8917c75ba89109a45">More...</a><br /></td></tr>
+<tr class="separator:ab525ae626622b9b8917c75ba89109a45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af4a106b5ab25a48b432ff53fc4da7b0a"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimpleJSON_1_1JSONNumber.html#af4a106b5ab25a48b432ff53fc4da7b0a">toString</a> () const</td></tr>
 <tr class="memdesc:af4a106b5ab25a48b432ff53fc4da7b0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert to string as specified in the json standard.  <a href="classsimpleJSON_1_1JSONNumber.html#af4a106b5ab25a48b432ff53fc4da7b0a">More...</a><br /></td></tr>
 <tr class="separator:af4a106b5ab25a48b432ff53fc4da7b0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a86b43b477aefa6eddec3d24d6815644c"><td class="memItemLeft" align="right" valign="top">std::variant&lt; <a class="el" href="namespacesimpleJSON.html#a267edfed460fd45f035a266b36a3f969">JSONFloating</a>, <a class="el" href="namespacesimpleJSON.html#a723058987c3ec18758b742fdd299d82e">JSONIntegral</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimpleJSON_1_1JSONNumber.html#a86b43b477aefa6eddec3d24d6815644c">value</a></td></tr>
-<tr class="separator:a86b43b477aefa6eddec3d24d6815644c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a981ad5b801a9ac1ffdce843e1b8c8de8"><td class="memItemLeft" align="right" valign="top">std::variant&lt; <a class="el" href="namespacesimpleJSON.html#a267edfed460fd45f035a266b36a3f969">JSONFloating</a>, <a class="el" href="namespacesimpleJSON.html#a46673ebf501633453f15f4fe256f5189">JSONInteger</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimpleJSON_1_1JSONNumber.html#a981ad5b801a9ac1ffdce843e1b8c8de8">value</a></td></tr>
+<tr class="separator:a981ad5b801a9ac1ffdce843e1b8c8de8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -122,7 +122,7 @@ Friends</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Class to represent json numbers. </p>
-<p>Internally, holds either a floating or integer value represented by JSONFloating or JSONIntegral respectively </p>
+<p>Internally, holds either a floating or integer value represented by JSONFloating or JSONInteger respectively </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a0d03743ecac4805218f7b587a9f9c030"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0d03743ecac4805218f7b587a9f9c030">&#9670;&nbsp;</a></span>JSONNumber() <span class="overload">[1/2]</span></h2>
@@ -187,14 +187,14 @@ template&lt;typename N , typename &gt; </div>
 
 </div>
 </div>
-<a id="a7758a296fe6c4e18e28fd122966607d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7758a296fe6c4e18e28fd122966607d5">&#9670;&nbsp;</a></span>getIntegral()</h2>
+<a id="ab525ae626622b9b8917c75ba89109a45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab525ae626622b9b8917c75ba89109a45">&#9670;&nbsp;</a></span>getInteger()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespacesimpleJSON.html#a723058987c3ec18758b742fdd299d82e">JSONIntegral</a> simpleJSON::JSONNumber::getIntegral </td>
+          <td class="memname"><a class="el" href="namespacesimpleJSON.html#a46673ebf501633453f15f4fe256f5189">JSONInteger</a> simpleJSON::JSONNumber::getInteger </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -203,7 +203,7 @@ template&lt;typename N , typename &gt; </div>
 </div><div class="memdoc">
 
 <p>Getter for the underlying integer number. </p>
-<p>Only valid if <a class="el" href="classsimpleJSON_1_1JSONNumber.html" title="Class to represent json numbers.">JSONNumber</a> actually contains an integer value, otherwise throws a <a class="el" href="classsimpleJSON_1_1JSONException.html" title="Class to represent various exceptions thrown by library functions.">JSONException</a> </p><dl class="section return"><dt>Returns</dt><dd>The underlying JSONIntegral </dd></dl>
+<p>Only valid if <a class="el" href="classsimpleJSON_1_1JSONNumber.html" title="Class to represent json numbers.">JSONNumber</a> actually contains an integer value, otherwise throws a <a class="el" href="classsimpleJSON_1_1JSONException.html" title="Class to represent various exceptions thrown by library functions.">JSONException</a> </p><dl class="section return"><dt>Returns</dt><dd>The underlying JSONInteger </dd></dl>
 
 </div>
 </div>
@@ -445,8 +445,8 @@ template&lt;typename N , typename &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a86b43b477aefa6eddec3d24d6815644c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a86b43b477aefa6eddec3d24d6815644c">&#9670;&nbsp;</a></span>value</h2>
+<a id="a981ad5b801a9ac1ffdce843e1b8c8de8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a981ad5b801a9ac1ffdce843e1b8c8de8">&#9670;&nbsp;</a></span>value</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -455,7 +455,7 @@ template&lt;typename N , typename &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::variant&lt;<a class="el" href="namespacesimpleJSON.html#a267edfed460fd45f035a266b36a3f969">JSONFloating</a>, <a class="el" href="namespacesimpleJSON.html#a723058987c3ec18758b742fdd299d82e">JSONIntegral</a>&gt; simpleJSON::JSONNumber::value</td>
+          <td class="memname">std::variant&lt;<a class="el" href="namespacesimpleJSON.html#a267edfed460fd45f035a266b36a3f969">JSONFloating</a>, <a class="el" href="namespacesimpleJSON.html#a46673ebf501633453f15f4fe256f5189">JSONInteger</a>&gt; simpleJSON::JSONNumber::value</td>
         </tr>
       </table>
   </td>

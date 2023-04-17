@@ -18,8 +18,8 @@ void testJSONArray() {
     std::string someString2("some std string");
     JSONString jsonStr1("json str");
     JSONFloating f1 = 0.22e13;
-    JSONIntegral ud1 = 123;
-    JSONIntegral sd1 = -123;
+    JSONInteger ud1 = 123;
+    JSONInteger sd1 = -123;
 
     // constructors
     JSONArray arr;                                              assert(arr.size() == 0);

@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['readme_2emd_31',['README.md',['../README_8md.html',1,'']]],
-  ['removefield_32',['removeField',['../classsimpleJSON_1_1JSONObject.html#a9a97d8996b44b8f6e50c10ad7990b5de',1,'simpleJSON::JSONObject']]]
+  ['simplejson_30',['SimpleJSON',['../index.html',1,'']]],
+  ['simplejson_31',['simpleJSON',['../namespacesimpleJSON.html',1,'']]],
+  ['simplejson_2ehpp_32',['simpleJSON.hpp',['../simpleJSON_8hpp.html',1,'']]],
+  ['size_33',['size',['../classsimpleJSON_1_1JSONArray.html#aab112efd4bbd19879f0a442542ce1984',1,'simpleJSON::JSONArray::size()'],['../classsimpleJSON_1_1JSONObject.html#a0f54a7f421affdb063dd085331f71b5e',1,'simpleJSON::JSONObject::size()']]]
 ];

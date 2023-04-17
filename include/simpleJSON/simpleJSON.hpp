@@ -13,16 +13,6 @@
 #include <variant>
 #include <vector>
 
-// #define DEBUG
-
-#ifdef DEBUG    
-#include <iostream>
-    static unsigned totalTraces = 0u;
-    #define FUNCTRACE { ++totalTraces; std::cout << "Calling: "  << __PRETTY_FUNCTION__ << std::endl << "total traces: " << totalTraces << std::endl; }
-#else
-    #define FUNCTRACE while(0){};
-#endif
-
 //------------------------------------- API -------------------------------------
 
 /// @brief Namespace containing all relevant classes and functions
@@ -38,8 +28,8 @@ namespace simpleJSON {
     /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONFloating__internal) 
     using JSONFloating = long double;
     /// @brief Type used to represent both positive and negative whole numbers.
-    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONIntegral__internal) 
-    using JSONIntegral = long long int;
+    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONInteger__internal) 
+    using JSONInteger = long long int;
 
     /// @brief Default string used for indentation
     /// @details This string will be appended once per indent level.
@@ -108,7 +98,7 @@ namespace simpleJSON {
 
     /// @brief Class to represent json numbers
     /// @details Internally, holds either a floating or integer value
-    ///          represented by JSONFloating or JSONIntegral respectively
+    ///          represented by JSONFloating or JSONInteger respectively
     class JSONNumber {
         public:
             /// @brief Default constructor creates integer with value 0
@@ -131,14 +121,14 @@ namespace simpleJSON {
             [[nodiscard]] JSONFloating getFloating() const;
             /// @brief Getter for the underlying integer number
             /// @details Only valid if JSONNumber actually contains an integer value, otherwise throws a JSONException
-            /// @return The underlying JSONIntegral
-            [[nodiscard]] JSONIntegral getIntegral() const;
+            /// @return The underlying JSONInteger
+            [[nodiscard]] JSONInteger getInteger() const;
             /// @brief Convert to string as specified in the json standard 
             /// @return String representation of underlying value
             [[nodiscard]] std::string toString() const;
 
         private:
-            std::variant<JSONFloating, JSONIntegral> value;
+            std::variant<JSONFloating, JSONInteger> value;
     };
 
     /// @brief Class to represent json booleans
@@ -256,22 +246,17 @@ namespace simpleJSON {
             /// @brief Remove element from the back of the array contained in this object
             /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
             void pop();
-             /// @brief Get number of elements in the array contained in this object
-            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
-            /// @return Number of elements in the array
-            [[nodiscard]] size_t size() const;
-            /// @brief Remove all elements from the array contained in this object
-            /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
-            void clear();
-
             /// @brief Remove specific entry from map conained in this object
             /// @details Only valid if this JSONObject holds a map, otherwise throws a JSONException
             void removeField(const JSONString& key);
-            /// @brief Get number of entries in a map conained in this object
-            /// @details Only valid if this JSONObject holds a map, otherwise throws a JSONException
-            /// @return Number of entries in map
-            [[nodiscard]] size_t getNumberOfFields() const;
-            
+            /// @brief Get number of elements in the array or map contained in this object
+            /// @details Only valid if this JSONObject holds an array or map, otherwise throws a JSONException
+            /// @return Number of elements in the array
+            [[nodiscard]] size_t size() const;
+            /// @brief Remove all elements from the array or map contained in this object
+            /// @details Only valid if this JSONObject holds an array or map, otherwise throws a JSONException
+            void clear();
+
             /// @brief Access the element at specified index in array conained in this object
             /// @details Only valid if this JSONObject holds an array, otherwise throws a JSONException
             /// @param[in] index Index to access
@@ -333,7 +318,7 @@ namespace internal {
     char peekNextNonSpaceCharacter__internal(std::istream& stream);
 
     simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str);
-    simpleJSON::JSONIntegral strToJSONIntegral__internal(const std::string& str);
+    simpleJSON::JSONInteger strToJSONInteger__internal(const std::string& str);
 
     simpleJSON::JSONString parseString__internal(std::istream& stream);
     simpleJSON::JSONNumber parseNumber__internal(std::istream& stream);
@@ -345,15 +330,11 @@ namespace internal {
 
 namespace simpleJSON {
     JSONObject parseFromFile(const std::filesystem::path& fileName) {
-        FUNCTRACE
-
         std::ifstream stream(fileName);
         return internal::beginParseFromStream__internal(stream);
     }
 
     JSONObject parseFromString(const std::string& jsonString) {
-        FUNCTRACE
-
         std::stringstream stream(jsonString);
         return internal::beginParseFromStream__internal(stream);
     }
@@ -403,9 +384,9 @@ namespace simpleJSON {
         return (lhs > rhs) || (lhs == rhs);
     }
 
-    JSONString::JSONString() : value(std::string{}) { FUNCTRACE }
-    JSONString::JSONString(const char* str) : value(std::string(str)) { FUNCTRACE }
-    JSONString::JSONString(std::string str) : value(std::move(str)) { FUNCTRACE }
+    JSONString::JSONString() : value(std::string{}) {}
+    JSONString::JSONString(const char* str) : value(std::string(str)) {}
+    JSONString::JSONString(std::string str) : value(std::move(str)) {}
 
     std::string JSONString::getString() const {
         return value;
@@ -417,20 +398,20 @@ namespace simpleJSON {
 
     // JSONNumber
 
-    JSONNumber::JSONNumber() : value(JSONIntegral(0)) { FUNCTRACE }
+    JSONNumber::JSONNumber() : value(JSONInteger(0)) {}
     
     template <typename N, typename>
     JSONNumber::JSONNumber(const N& num) {
-        FUNCTRACE 
+       
 
         if constexpr (std::is_floating_point_v<N>) {
 			value = JSONFloating(num);
 		}
 		else if constexpr (std::is_integral_v<N>) {
-			value = JSONIntegral(num);
+			value = JSONInteger(num);
 		}
         else {
-            throw JSONException("JSONNumber must be created with floating point or integral value");
+            throw JSONException("JSONNumber must be created with floating point or integer value");
         }
     }
 
@@ -452,16 +433,16 @@ namespace simpleJSON {
             return std::get<JSONFloating>(lhsValue) < std::get<JSONFloating>(rhsValue);
         }
         
-        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) < std::get<JSONIntegral>(rhsValue);
+        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) < std::get<JSONInteger>(rhsValue);
         }
         
-        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONIntegral>(lhsValue) < std::get<JSONFloating>(rhsValue);
+        if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONInteger>(lhsValue) < std::get<JSONFloating>(rhsValue);
         }
         
-        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
-            return std::get<JSONIntegral>(lhsValue) < std::get<JSONIntegral>(rhsValue);
+        if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
+            return std::get<JSONInteger>(lhsValue) < std::get<JSONInteger>(rhsValue);
         }
         
         // should not get here
@@ -482,16 +463,16 @@ namespace simpleJSON {
             return std::get<JSONFloating>(lhsValue) > std::get<JSONFloating>(rhsValue);
         }
         
-        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) > std::get<JSONIntegral>(rhsValue);
+        if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
+            return std::get<JSONFloating>(lhsValue) > std::get<JSONInteger>(rhsValue);
         }
         
-        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONIntegral>(lhsValue) > std::get<JSONFloating>(rhsValue);
+        if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
+            return std::get<JSONInteger>(lhsValue) > std::get<JSONFloating>(rhsValue);
         }
          
-        if (std::holds_alternative<JSONIntegral>(lhsValue) && std::holds_alternative<JSONIntegral>(rhsValue)) { 
-            return std::get<JSONIntegral>(lhsValue) > std::get<JSONIntegral>(rhsValue);
+        if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
+            return std::get<JSONInteger>(lhsValue) > std::get<JSONInteger>(rhsValue);
         }
 
         // should not get here
@@ -510,12 +491,12 @@ namespace simpleJSON {
         throw JSONException("This JSONNumber does not contain a floating point value");
     }
 
-    JSONIntegral JSONNumber::getIntegral() const {
-        if (std::holds_alternative<JSONIntegral>(value)) {
-            return std::get<JSONIntegral>(value);
+    JSONInteger JSONNumber::getInteger() const {
+        if (std::holds_alternative<JSONInteger>(value)) {
+            return std::get<JSONInteger>(value);
         }
        
-        throw JSONException("This JSONNumber does not contain a signed integral value");
+        throw JSONException("This JSONNumber does not contain an integer value");
     }
 
     std::string JSONNumber::toString() const {
@@ -532,8 +513,8 @@ namespace simpleJSON {
 
     // JSONBool
 
-    JSONBool::JSONBool() : value(false) { FUNCTRACE }
-    JSONBool::JSONBool(bool val) : value(val) { FUNCTRACE }
+    JSONBool::JSONBool() : value(false) {}
+    JSONBool::JSONBool(bool val) : value(val) {}
 
     bool operator==(const JSONBool& lhs, const JSONBool& rhs) {
         return lhs.value == rhs.value;
@@ -571,18 +552,16 @@ namespace simpleJSON {
 
     // JSONArray
 
-    JSONArray::JSONArray() : value(std::vector<JSONObject>{}) { FUNCTRACE }
-    JSONArray::JSONArray(const std::initializer_list<JSONObject> list) : value(list) { FUNCTRACE }
+    JSONArray::JSONArray() : value(std::vector<JSONObject>{}) {}
+    JSONArray::JSONArray(const std::initializer_list<JSONObject> list) : value(list) {}
 
     template <typename T>
     void JSONArray::append(T&& arg) {
-        FUNCTRACE
         value.emplace_back(std::forward<T>(arg));
         return;
     }
 
     void JSONArray::pop() {
-        FUNCTRACE
         value.pop_back();
         return;
     }
@@ -659,19 +638,19 @@ namespace simpleJSON {
 
     // JSONObject
 
-    JSONObject::JSONObject() : value(std::map<JSONString, JSONObject>{}) { FUNCTRACE }
-    JSONObject::JSONObject(const char* str) : value(JSONString(str)) { FUNCTRACE }
-    JSONObject::JSONObject(const std::string& str) : value(JSONString(str)) { FUNCTRACE }
-    JSONObject::JSONObject(const JSONString& str) : value(str) { FUNCTRACE }
+    JSONObject::JSONObject() : value(std::map<JSONString, JSONObject>{}) {}
+    JSONObject::JSONObject(const char* str) : value(JSONString(str)) {}
+    JSONObject::JSONObject(const std::string& str) : value(JSONString(str)) {}
+    JSONObject::JSONObject(const JSONString& str) : value(str) {}
     template <typename N, typename>
-    JSONObject::JSONObject(const N& num) : value(JSONNumber(num)) { FUNCTRACE }
-    JSONObject::JSONObject(const JSONNumber& num) : value(num) { FUNCTRACE }
-    JSONObject::JSONObject(const bool b) : value(JSONBool(b)) { FUNCTRACE }
-    JSONObject::JSONObject(const JSONBool b) : value(b) { FUNCTRACE }
-    JSONObject::JSONObject(const std::nullptr_t) : value(JSONNull{}) { FUNCTRACE }
-    JSONObject::JSONObject(const JSONNull n) : value(n) { FUNCTRACE }
-    JSONObject::JSONObject(const JSONArray& arr) : value(arr) { FUNCTRACE }
-    JSONObject::JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list) : value(list) { FUNCTRACE }
+    JSONObject::JSONObject(const N& num) : value(JSONNumber(num)) {}
+    JSONObject::JSONObject(const JSONNumber& num) : value(num) {}
+    JSONObject::JSONObject(const bool b) : value(JSONBool(b)) {}
+    JSONObject::JSONObject(const JSONBool b) : value(b) {}
+    JSONObject::JSONObject(const std::nullptr_t) : value(JSONNull{}) {}
+    JSONObject::JSONObject(const JSONNull n) : value(n) {}
+    JSONObject::JSONObject(const JSONArray& arr) : value(arr) {}
+    JSONObject::JSONObject(const std::initializer_list<std::pair<const JSONString, JSONObject>> list) : value(list) {}
 
     template <typename T>
     void JSONObject::append(T&& arg) {
@@ -694,24 +673,6 @@ namespace simpleJSON {
         throw JSONException("Cannot pop. Current JSONObject does not hold an array");
     }
 
-    size_t JSONObject::size() const {
-        if (std::holds_alternative<JSONArray>(value)) {
-            const auto& arr = std::get<JSONArray>(value);
-            return arr.size();
-        }
-        
-        throw JSONException("Current JSONObject is not an array, cannot call size()");
-    }
-    
-    void JSONObject::clear() {
-        if (std::holds_alternative<JSONArray>(value)) {
-            auto& arr = std::get<JSONArray>(value);
-            return arr.clear();
-        }
-        
-        throw JSONException("Current JSONObject is not an array, cannot call clear()");
-    }
-
     void JSONObject::removeField(const JSONString& key) {
         if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
             auto& map = std::get<std::map<JSONString, JSONObject>>(value);
@@ -727,14 +688,32 @@ namespace simpleJSON {
         throw JSONException("Removing field failed, this JSONObject is not a map");      
     }
 
-    
-    size_t JSONObject::getNumberOfFields() const {
+    size_t JSONObject::size() const {
+        if (std::holds_alternative<JSONArray>(value)) {
+            const auto& arr = std::get<JSONArray>(value);
+            return arr.size();
+        }
+
         if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
             const auto& map = std::get<std::map<JSONString, JSONObject>>(value);
             return map.size();
         }
         
-        throw JSONException("Removing field failed, this JSONObject is not a map");
+        throw JSONException("Current JSONObject is not an array or map, cannot call size()");
+    }
+    
+    void JSONObject::clear() {
+        if (std::holds_alternative<JSONArray>(value)) {
+            auto& arr = std::get<JSONArray>(value);
+            return arr.clear();
+        }
+
+        if (std::holds_alternative<std::map<JSONString, JSONObject>>(value)) {
+            auto& map = std::get<std::map<JSONString, JSONObject>>(value);
+            return map.clear();
+        }
+        
+        throw JSONException("Current JSONObject is not an array or map, cannot call clear()");
     }
 
     JSONObject& JSONObject::operator[](const size_t index) {
@@ -913,8 +892,6 @@ namespace simpleJSON {
 
 namespace internal {
     simpleJSON::JSONObject beginParseFromStream__internal(std::istream& stream) {
-        FUNCTRACE
-
         simpleJSON::JSONObject result;
         
         char next = peekNextNonSpaceCharacter__internal(stream);
@@ -1037,14 +1014,14 @@ namespace internal {
         return result;
     }
 
-    simpleJSON::JSONIntegral strToJSONIntegral__internal(const std::string& str) {
+    simpleJSON::JSONInteger strToJSONInteger__internal(const std::string& str) {
         if ((str.length() > 1 && str[0] == '0') || (str.length() > 2 && (str[0] == '-' && str[1] == '0'))) {
             throw simpleJSON::JSONException("Error while parsing number, integer cannot start with 0");
         }
 
         char* afterEnd = nullptr;
         const int base = 10;
-        simpleJSON::JSONIntegral result = std::strtoll(str.c_str(), &afterEnd, base);
+        simpleJSON::JSONInteger result = std::strtoll(str.c_str(), &afterEnd, base);
             
         if (*afterEnd != '\0') {
             throw simpleJSON::JSONException("Error while parsing number, invalid integer");
@@ -1054,8 +1031,6 @@ namespace internal {
     }
 
     simpleJSON::JSONString parseString__internal(std::istream& stream) {
-        FUNCTRACE
-
         char currentChar{};
         stream.get(currentChar);
 
@@ -1110,8 +1085,6 @@ namespace internal {
     }
 
     simpleJSON::JSONNumber parseNumber__internal(std::istream& stream) {
-        FUNCTRACE
-
         char c = stream.peek();
         std::string numberAsString;
 
@@ -1136,12 +1109,10 @@ namespace internal {
             return simpleJSON::JSONNumber{internal::strToJSONFloating__internal(numberAsString)};
         }
         
-        return simpleJSON::JSONNumber{internal::strToJSONIntegral__internal(numberAsString)};
+        return simpleJSON::JSONNumber{internal::strToJSONInteger__internal(numberAsString)};
     }
     
     simpleJSON::JSONBool parseBool__internal(std::istream& stream) {
-        FUNCTRACE
-
         char c1{};  
         char c2{};  
         char c3{};  
@@ -1173,8 +1144,6 @@ namespace internal {
     }
     
     simpleJSON::JSONNull parseNull__internal(std::istream& stream) {
-        FUNCTRACE
-
         char c1{};  
         char c2{};  
         char c3{};  
@@ -1195,8 +1164,6 @@ namespace internal {
     }
 
     simpleJSON::JSONArray parseArray__internal(std::istream& stream) {
-        FUNCTRACE
-
         char c{};
         stream.get(c);
 
@@ -1275,8 +1242,6 @@ namespace internal {
     }
 
     simpleJSON::JSONObject parseObject__internal(std::istream& stream) {
-        FUNCTRACE
-
         char next{};
         stream.get(next);
 
