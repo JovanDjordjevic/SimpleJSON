@@ -7,6 +7,9 @@ on:
       - master
       - develop
 
+env:
+  FORCE_COLOR: "1"
+
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
@@ -32,13 +35,24 @@ jobs:
         run: mkdir build 
       - name: "Run CMake"
         working-directory: build
-        run: cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTING=ON -DENABLE_COVERAGE_REPORT=ON -DENABLE_DOXYGEN=ON ..
+        run: >-
+          cmake -G "Unix Makefiles" 
+          -DCMAKE_BUILD_TYPE=Debug 
+          -DSJ_ENABLE_BUILD_TESTS=ON 
+          -DSJ_ENABLE_COVERAGE_REPORT=ON 
+          -DSJ_ENABLE_DOXYGEN=ON 
+          -DSJ_ENABLE_BUILD_EXAMPLES=ON 
+          -DSJ_ENABLE_CALLGRIND_TARGETS=OFF
+          -DSJ_ENABLE_STATIC_ANALYSIS=OFF
+          -DSJ_ENABLE_BRUTAL_COMPILE_OPTIONS=OFF
+          -DSJ_ENABLE_SANITIZERS=OFF
+          ..
       - name: "Build targets"
         working-directory: build
         run: cmake --build .
       - name: "Generate coverage report"
         working-directory: build
-        run: cmake --build . --target ccov-all
+        run: cmake --build . --target ccov-all    # tests will already be run once here, but not as part of ctest
       - name: "Save coverage report artifact"
         uses: actions/upload-artifact@v3
         with: 
@@ -99,13 +113,23 @@ jobs:
         run: mkdir build 
       - name: "Run CMake"
         working-directory: build
-        run: cmake -G "Visual Studio 17 2022" -DENABLE_TESTING=ON -DENABLE_COVERAGE_REPORT=OFF -DENABLE_DOXYGEN=OFF ..
+        run: >-
+          cmake -G "Visual Studio 17 2022"
+          -DSJ_ENABLE_BUILD_TESTS=ON 
+          -DSJ_ENABLE_COVERAGE_REPORT=OFF 
+          -DSJ_ENABLE_DOXYGEN=OFF 
+          -DSJ_ENABLE_BUILD_EXAMPLES=ON 
+          -DSJ_ENABLE_CALLGRIND_TARGETS=OFF
+          -DSJ_ENABLE_STATIC_ANALYSIS=OFF
+          -DSJ_ENABLE_BRUTAL_COMPILE_OPTIONS=OFF
+          -DSJ_ENABLE_SANITIZERS=OFF
+          ..
       - name: "Build targets"
         working-directory: build
-        run: cmake --build . --target ALL_BUILD --config Release        # use Release config to avoid stopping workflow on errors that the library handles normally
+        run: cmake --build . --target ALL_BUILD --config Release # use Release config to avoid stopping workflow on errors that the library handles normally
       - name: "Run tests"
         working-directory: build
-        run: ctest -C Release     # use Release config to avoid stopping workflow on errors that the library handles normally
+        run: ctest -C Release # use Release config to avoid stopping workflow on errors that the library handles normally
 
   buildOnMacWithClang:
     runs-on: macos-latest
@@ -116,7 +140,18 @@ jobs:
         run: mkdir build 
       - name: "Run CMake"
         working-directory: build
-        run: cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTING=ON -DENABLE_COVERAGE_REPORT=OFF -DENABLE_DOXYGEN=OFF ..
+        run: >-
+          cmake
+          -DCMAKE_BUILD_TYPE=Debug 
+          -DSJ_ENABLE_BUILD_TESTS=ON 
+          -DSJ_ENABLE_COVERAGE_REPORT=OFF 
+          -DSJ_ENABLE_DOXYGEN=OFF 
+          -DSJ_ENABLE_BUILD_EXAMPLES=ON 
+          -DSJ_ENABLE_CALLGRIND_TARGETS=OFF
+          -DSJ_ENABLE_STATIC_ANALYSIS=OFF
+          -DSJ_ENABLE_BRUTAL_COMPILE_OPTIONS=OFF
+          -DSJ_ENABLE_SANITIZERS=OFF
+          ..
       - name: "Build targets"
         working-directory: build
         run: cmake --build .
