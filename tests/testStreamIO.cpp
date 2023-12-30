@@ -3,6 +3,8 @@
 
 #include "simpleJSON/simpleJSON.hpp"
 
+void testStreamIO();
+
 void testStreamIO() {
     // auto obj1 = simpleJSON::parseFromFile("testInputs/smallJson.json");
     auto obj1 = simpleJSON::parseFromFile("../../tests/testInputs/smallJson.json");

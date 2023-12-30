@@ -22,18 +22,22 @@ if(SJ_ENABLE_BUILD_TESTS)
             if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
                 list(APPEND SJ_WARNING_SUPPRESSORS 
                     -Wno-unsafe-loop-optimizations
+                    -Wno-abi
                 )
             elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
                 list(APPEND SJ_WARNING_SUPPRESSORS 
                     -Wno-padded
                     -Wno-date-time
                     -Wno-c++98-compat
+                    -Wno-zero-as-null-pointer-constant
                 )
             elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
                 list(APPEND SJ_WARNING_SUPPRESSORS 
-                    /wd4820
                     /wd4514
+                    /wd4710
                     /wd4711
+                    /wd4820
+                    /wd4866
                     /wd5045
                 )
             endif()

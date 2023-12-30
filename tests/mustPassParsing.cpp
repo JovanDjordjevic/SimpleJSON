@@ -6,7 +6,6 @@
 #include "simpleJSON/simpleJSON.hpp"
 
 int main() {
-
     // std::filesystem::path dataPath("./test_parsing");
     std::filesystem::path dataPath("../../tests/test_parsing");
 

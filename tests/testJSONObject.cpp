@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cassert>
 
+void testJSONObject();
+
 // helper function for comparing floats
 template <typename T, typename V>
 std::enable_if_t<std::is_floating_point_v<T> && std::is_floating_point_v<V>, bool>

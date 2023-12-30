@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+void testJSONBool();
+
 void testJSONBool() {
     using namespace simpleJSON;
     

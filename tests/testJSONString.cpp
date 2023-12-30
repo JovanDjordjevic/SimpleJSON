@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+void testJSONString();
+
 void testJSONString() {
     using namespace simpleJSON;
 

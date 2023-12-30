@@ -1,5 +1,5 @@
-#ifndef __SIMPLE_JSON__
-#define __SIMPLE_JSON__
+#ifndef SIMPLE_JSON_HPP
+#define SIMPLE_JSON_HPP
 
 #include <algorithm>
 #include <cctype>
@@ -13,7 +13,9 @@
 #include <variant>
 #include <vector>
 
-//------------------------------------- API -------------------------------------
+// ============================================================================================================================================
+// =================================================================== API ====================================================================
+// ============================================================================================================================================
 
 /// @brief Namespace containing all relevant classes and functions
 namespace simpleJSON {
@@ -25,15 +27,15 @@ namespace simpleJSON {
     class JSONObject;
 
     /// @brief Type used to represent floating point numbers.
-    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONFloating__internal) 
+    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONFloating) 
     using JSONFloating = long double;
     /// @brief Type used to represent both positive and negative whole numbers.
-    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONInteger__internal) 
+    /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONInteger) 
     using JSONInteger = long long int;
 
     /// @brief Default string used for indentation
     /// @details This string will be appended once per indent level.
-    const std::string defaultIndentString = "\t";
+    static const char* defaultIndentString = "\t";
 
     /// @brief Function to parse a json file
     /// @details Throws JSONException if anything goes wrong
@@ -295,8 +297,11 @@ namespace simpleJSON {
     };
 }   // namespace simpleJSON 
 
-//------------------------------------- IMPLEMENTATION -------------------------------------
+// ============================================================================================================================================
+// ============================================================== IMPLEMENTATION ==============================================================
+// ============================================================================================================================================
 
+// namespace for helper functions, not indended for end-users
 namespace internal {
     enum class NextJsonType {
         JSON_STRING,
@@ -309,34 +314,37 @@ namespace internal {
         JSON_ERROR
     };
 
-    simpleJSON::JSONObject beginParseFromStream__internal(std::istream& stream);
+    simpleJSON::JSONObject beginParseFromStream(std::istream& stream);
 
-    NextJsonType detectNextType__internal(const char nextCharInStream);
+    NextJsonType detectNextType(const char nextCharInStream);
 
-    bool isValidEscapedCharacter__internal(const char c);
-    bool isValidWhitespace__internal(const char c);
-    char peekNextNonSpaceCharacter__internal(std::istream& stream);
+    bool isValidEscapedCharacter(const char c);
+    bool isValidWhitespace(const char c);
+    char peekNextNonSpaceCharacter(std::istream& stream);
 
-    simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str);
-    simpleJSON::JSONInteger strToJSONInteger__internal(const std::string& str);
+    simpleJSON::JSONFloating strToJSONFloating(const std::string& str);
+    simpleJSON::JSONInteger strToJSONInteger(const std::string& str);
 
-    simpleJSON::JSONString parseString__internal(std::istream& stream);
-    simpleJSON::JSONNumber parseNumber__internal(std::istream& stream);
-    simpleJSON::JSONBool parseBool__internal(std::istream& stream);
-    simpleJSON::JSONNull parseNull__internal(std::istream& stream);
-    simpleJSON::JSONArray parseArray__internal(std::istream& stream);
-    simpleJSON::JSONObject parseObject__internal(std::istream& stream);
+    template <typename T>
+    constexpr auto resolveJsonNumberInitialValue(const T val);
+
+    simpleJSON::JSONString parseString(std::istream& stream);
+    simpleJSON::JSONNumber parseNumber(std::istream& stream);
+    simpleJSON::JSONBool parseBool(std::istream& stream);
+    simpleJSON::JSONNull parseNull(std::istream& stream);
+    simpleJSON::JSONArray parseArray(std::istream& stream);
+    simpleJSON::JSONObject parseObject(std::istream& stream);
 } // namespace internal
 
 namespace simpleJSON {
     JSONObject parseFromFile(const std::filesystem::path& fileName) {
         std::ifstream stream(fileName);
-        return internal::beginParseFromStream__internal(stream);
+        return internal::beginParseFromStream(stream);
     }
 
     JSONObject parseFromString(const std::string& jsonString) {
         std::stringstream stream(jsonString);
-        return internal::beginParseFromStream__internal(stream);
+        return internal::beginParseFromStream(stream);
     }
 
     // void dumpToFile(const char* fileName);
@@ -401,19 +409,9 @@ namespace simpleJSON {
     JSONNumber::JSONNumber() : value(JSONInteger(0)) {}
     
     template <typename N, typename>
-    JSONNumber::JSONNumber(const N& num) {
-       
-
-        if constexpr (std::is_floating_point_v<N>) {
-			value = JSONFloating(num);
-		}
-		else if constexpr (std::is_integral_v<N>) {
-			value = JSONInteger(num);
-		}
-        else {
-            throw JSONException("JSONNumber must be created with floating point or integer value");
-        }
-    }
+    JSONNumber::JSONNumber(const N& num) 
+        : value{internal::resolveJsonNumberInitialValue(num)}
+    {}
 
     bool operator==(const JSONNumber& lhs, const JSONNumber& rhs) {
         return lhs.value == rhs.value;
@@ -434,11 +432,11 @@ namespace simpleJSON {
         }
         
         if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) < std::get<JSONInteger>(rhsValue);
+            return std::get<JSONFloating>(lhsValue) < static_cast<JSONFloating>(std::get<JSONInteger>(rhsValue));
         }
         
         if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONInteger>(lhsValue) < std::get<JSONFloating>(rhsValue);
+            return static_cast<JSONFloating>(std::get<JSONInteger>(lhsValue)) < std::get<JSONFloating>(rhsValue);
         }
         
         if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
@@ -464,11 +462,11 @@ namespace simpleJSON {
         }
         
         if (std::holds_alternative<JSONFloating>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
-            return std::get<JSONFloating>(lhsValue) > std::get<JSONInteger>(rhsValue);
+            return std::get<JSONFloating>(lhsValue) > static_cast<JSONFloating>(std::get<JSONInteger>(rhsValue));
         }
         
         if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONFloating>(rhsValue)) { 
-            return std::get<JSONInteger>(lhsValue) > std::get<JSONFloating>(rhsValue);
+            return static_cast<JSONFloating>(std::get<JSONInteger>(lhsValue)) > std::get<JSONFloating>(rhsValue);
         }
          
         if (std::holds_alternative<JSONInteger>(lhsValue) && std::holds_alternative<JSONInteger>(rhsValue)) { 
@@ -891,31 +889,31 @@ namespace simpleJSON {
 } // namespace simpleJSON 
 
 namespace internal {
-    simpleJSON::JSONObject beginParseFromStream__internal(std::istream& stream) {
+    simpleJSON::JSONObject beginParseFromStream(std::istream& stream) {
         simpleJSON::JSONObject result;
         
-        char next = peekNextNonSpaceCharacter__internal(stream);
+        char next = peekNextNonSpaceCharacter(stream);
 
-        internal::NextJsonType nextType = internal::detectNextType__internal(next);
+        internal::NextJsonType nextType = internal::detectNextType(next);
 
         switch (nextType) {
             case internal::NextJsonType::JSON_STRING:
-                result = internal::parseString__internal(stream);
+                result = internal::parseString(stream);
                 break;
             case internal::NextJsonType::JSON_NUMBER:
-                result = internal::parseNumber__internal(stream);
+                result = internal::parseNumber(stream);
                 break;
             case internal::NextJsonType::JSON_BOOL:
-                result = internal::parseBool__internal(stream);
+                result = internal::parseBool(stream);
                 break;
             case internal::NextJsonType::JSON_NULL:
-                result = internal::parseNull__internal(stream);
+                result = internal::parseNull(stream);
                 break;
             case internal::NextJsonType::JSON_ARRAY:
-                result = internal::parseArray__internal(stream);
+                result = internal::parseArray(stream);
                 break;
             case internal::NextJsonType::JSON_OBJECT:
-                result = internal::parseObject__internal(stream);
+                result = internal::parseObject(stream);
                 break;
             case internal::NextJsonType::JSON_END_OF_STREAM: 
                 throw simpleJSON::JSONException("Cannot parse empty file or file containing only whitespace");
@@ -926,7 +924,7 @@ namespace internal {
                 break;
         }
    
-        next = peekNextNonSpaceCharacter__internal(stream);
+        next = peekNextNonSpaceCharacter(stream);
 
         if (next != std::istream::traits_type::eof()) {
             throw simpleJSON::JSONException("Error after reading a valid json object. Expected EOF but found '" + std::string{next} + "'");
@@ -935,7 +933,7 @@ namespace internal {
         return result;
     }
 
-    NextJsonType detectNextType__internal(const char nextCharInStream) {
+    NextJsonType detectNextType(const char nextCharInStream) {
         switch (nextCharInStream) {
             case '"':
                 return NextJsonType::JSON_STRING;
@@ -967,28 +965,28 @@ namespace internal {
         }
     }
 
-    bool isValidEscapedCharacter__internal(const char c) {
+    bool isValidEscapedCharacter(const char c) {
         return c == '"' || c == '\\' || c == '/' || c == 'b' || 
                c == 'f' || c == 'n' || c == 'r' || c == 't' || c == 'u';
     }
 
-    bool isValidWhitespace__internal(const char c) {
+    bool isValidWhitespace(const char c) {
         // form feed (0x0c, '\f') and vertical tab (0x0b, '\v') are not explicitly allowed as whitespace in RFC 8259
         return c == ' ' || c == '\n' || c == '\r' || c == '\t';
     }
 
-    char peekNextNonSpaceCharacter__internal(std::istream& stream) {
-        char next = stream.peek();
+    char peekNextNonSpaceCharacter(std::istream& stream) {
+        char next = static_cast<char>(stream.peek());
         
-        while (isValidWhitespace__internal(next)) {
+        while (isValidWhitespace(next)) {
             stream.get();
-            next = stream.peek();
+            next = static_cast<char>(stream.peek());
         }
 
         return next;
     }
 
-    simpleJSON::JSONFloating strToJSONFloating__internal(const std::string& str) {
+    simpleJSON::JSONFloating strToJSONFloating(const std::string& str) {
         if (str.back() == '.') {
             throw simpleJSON::JSONException("Error while parsing number, decimal point cannot be the last character");
         }
@@ -1014,7 +1012,7 @@ namespace internal {
         return result;
     }
 
-    simpleJSON::JSONInteger strToJSONInteger__internal(const std::string& str) {
+    simpleJSON::JSONInteger strToJSONInteger(const std::string& str) {
         if ((str.length() > 1 && str[0] == '0') || (str.length() > 2 && (str[0] == '-' && str[1] == '0'))) {
             throw simpleJSON::JSONException("Error while parsing number, integer cannot start with 0");
         }
@@ -1030,7 +1028,20 @@ namespace internal {
         return result;
     }
 
-    simpleJSON::JSONString parseString__internal(std::istream& stream) {
+    template <typename T>
+    constexpr auto resolveJsonNumberInitialValue(const T val) {
+        if constexpr (std::is_floating_point_v<T>) {
+			return simpleJSON::JSONFloating(val);
+		}
+		else if constexpr (std::is_integral_v<T>) {
+			return simpleJSON::JSONInteger(val);
+		}
+        else {
+            throw simpleJSON::JSONException("JSONNumber must be created with floating point or integer value");
+        }
+    }
+
+    simpleJSON::JSONString parseString(std::istream& stream) {
         char currentChar{};
         stream.get(currentChar);
 
@@ -1066,7 +1077,7 @@ namespace internal {
                 currentCharIsEscaped = true;
             }
             else if (currentCharIsEscaped) {
-                if (!isValidEscapedCharacter__internal(currentChar)) {
+                if (!isValidEscapedCharacter(currentChar)) {
                     throw simpleJSON::JSONException("Error while parsing string, invalid escaped character");
                 }
 
@@ -1084,8 +1095,8 @@ namespace internal {
         throw simpleJSON::JSONException("Error while parsing string, unexpected end of stream");
     }
 
-    simpleJSON::JSONNumber parseNumber__internal(std::istream& stream) {
-        char c = stream.peek();
+    simpleJSON::JSONNumber parseNumber(std::istream& stream) {
+        char c = static_cast<char>(stream.peek());
         std::string numberAsString;
 
         short dotCount = 0;
@@ -1102,17 +1113,17 @@ namespace internal {
             stream.get(c);
             numberAsString += c;
 
-            c = stream.peek();
+            c = static_cast<char>(stream.peek());
         }
         
         if (dotCount != 0 || eCount != 0) {
-            return simpleJSON::JSONNumber{internal::strToJSONFloating__internal(numberAsString)};
+            return simpleJSON::JSONNumber{internal::strToJSONFloating(numberAsString)};
         }
         
-        return simpleJSON::JSONNumber{internal::strToJSONInteger__internal(numberAsString)};
+        return simpleJSON::JSONNumber{internal::strToJSONInteger(numberAsString)};
     }
     
-    simpleJSON::JSONBool parseBool__internal(std::istream& stream) {
+    simpleJSON::JSONBool parseBool(std::istream& stream) {
         char c1{};  
         char c2{};  
         char c3{};  
@@ -1143,7 +1154,7 @@ namespace internal {
         throw simpleJSON::JSONException(R"(Error while parsing bool, expected "true" or "false", got ")" + out + "\"");
     }
     
-    simpleJSON::JSONNull parseNull__internal(std::istream& stream) {
+    simpleJSON::JSONNull parseNull(std::istream& stream) {
         char c1{};  
         char c2{};  
         char c3{};  
@@ -1163,7 +1174,7 @@ namespace internal {
         return simpleJSON::JSONNull{};
     }
 
-    simpleJSON::JSONArray parseArray__internal(std::istream& stream) {
+    simpleJSON::JSONArray parseArray(std::istream& stream) {
         char c{};
         stream.get(c);
 
@@ -1177,7 +1188,7 @@ namespace internal {
         bool lastReadWasComma = false;
 
         while (stream) {
-            c = peekNextNonSpaceCharacter__internal(stream);
+            c = peekNextNonSpaceCharacter(stream);
 
             if (c == ',') {
                 if (expectingComma) {
@@ -1203,26 +1214,26 @@ namespace internal {
                 throw simpleJSON::JSONException("Entries in array must be separated by a comma");
             }
 
-            NextJsonType nextType = detectNextType__internal(c);
+            NextJsonType nextType = detectNextType(c);
             
             switch (nextType) {
                 case NextJsonType::JSON_STRING: 
-                    result.append(parseString__internal(stream));
+                    result.append(parseString(stream));
                     break;
                 case NextJsonType::JSON_NUMBER:
-                    result.append(parseNumber__internal(stream));
+                    result.append(parseNumber(stream));
                     break;
                 case NextJsonType::JSON_BOOL:
-                    result.append(parseBool__internal(stream));
+                    result.append(parseBool(stream));
                     break;
                 case NextJsonType::JSON_NULL:
-                    result.append(parseNull__internal(stream));
+                    result.append(parseNull(stream));
                     break;
                 case NextJsonType::JSON_ARRAY:
-                    result.append(parseArray__internal(stream));
+                    result.append(parseArray(stream));
                     break;
                 case NextJsonType::JSON_OBJECT:
-                    result.append(parseObject__internal(stream));
+                    result.append(parseObject(stream));
                     break;
                 case NextJsonType::JSON_END_OF_STREAM:
                     // next read will fail and function will end
@@ -1241,7 +1252,7 @@ namespace internal {
         throw simpleJSON::JSONException("Error while parsing array, unexpected end of stream");
     }
 
-    simpleJSON::JSONObject parseObject__internal(std::istream& stream) {
+    simpleJSON::JSONObject parseObject(std::istream& stream) {
         char next{};
         stream.get(next);
 
@@ -1254,7 +1265,7 @@ namespace internal {
         bool lastReadWasComma = false;
 
         while (stream) {
-            next = peekNextNonSpaceCharacter__internal(stream);
+            next = peekNextNonSpaceCharacter(stream);
 
             if (next == '}') {
                 if (lastReadWasComma) {
@@ -1272,10 +1283,10 @@ namespace internal {
                 throw simpleJSON::JSONException("Error while parsing object, expected '\"', got '" + std::string{next} + "'");
             }
 
-            simpleJSON::JSONString key = parseString__internal(stream);
+            simpleJSON::JSONString key = parseString(stream);
 
             // possible white space between map key and :
-            next = peekNextNonSpaceCharacter__internal(stream);
+            next = peekNextNonSpaceCharacter(stream);
             stream.get(next);
 
             // must read separator
@@ -1284,28 +1295,28 @@ namespace internal {
             }
 
             // possible white space between : and map value
-            next = peekNextNonSpaceCharacter__internal(stream);
+            next = peekNextNonSpaceCharacter(stream);
 
-            NextJsonType nextType = detectNextType__internal(next);
+            NextJsonType nextType = detectNextType(next);
             
             switch (nextType) {
                 case NextJsonType::JSON_STRING:
-                    result[key] = parseString__internal(stream);
+                    result[key] = parseString(stream);
                     break;
                 case NextJsonType::JSON_NUMBER:
-                    result[key] = parseNumber__internal(stream);
+                    result[key] = parseNumber(stream);
                     break;
                 case NextJsonType::JSON_BOOL:
-                    result[key] = parseBool__internal(stream);
+                    result[key] = parseBool(stream);
                     break;
                 case NextJsonType::JSON_NULL:
-                    result[key] = parseNull__internal(stream);
+                    result[key] = parseNull(stream);
                     break;
                 case NextJsonType::JSON_ARRAY:
-                    result[key] = parseArray__internal(stream);
+                    result[key] = parseArray(stream);
                     break;
                 case NextJsonType::JSON_OBJECT:
-                    result[key] = parseObject__internal(stream);
+                    result[key] = parseObject(stream);
                     break;
                 case NextJsonType::JSON_END_OF_STREAM:
                     // next read will fail and function will end
@@ -1317,7 +1328,7 @@ namespace internal {
             }
 
             //  possible white space between map value and , or }
-            next = peekNextNonSpaceCharacter__internal(stream);
+            next = peekNextNonSpaceCharacter(stream);
             stream.get(next);
             
             if (next == ',') {
@@ -1336,4 +1347,4 @@ namespace internal {
     }
 } // namespace internal
 
-#endif //__SIMPLE_JSON__
+#endif //SIMPLE_JSON_HPP
