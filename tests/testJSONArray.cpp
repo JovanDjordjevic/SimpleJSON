@@ -52,7 +52,7 @@ void testJSONArray() {
     initialzedArray.append(JSONArray{});                        assert(initialzedArray.size() == 7);
     initialzedArray.append(JSONObject());                       assert(initialzedArray.size() == 8);
     initialzedArray.append(JSONObject("str obj"));              assert(initialzedArray.size() == 9);
-    initialzedArray.append(JSONObject{{"key1", "value1"}});     assert(initialzedArray.size() == 10);
+    initialzedArray.append(JSONMap{{"key1", "value1"}});        assert(initialzedArray.size() == 10);
     initialzedArray.pop();                                      assert(initialzedArray.size() == 9);
     initialzedArray.pop();                                      assert(initialzedArray.size() == 8);
     

@@ -21,22 +21,22 @@ void testJSONNumber() {
     JSONInteger sd1 = -123;
 
     // constructors
-    JSONNumber num1;                            assert(num1.getInteger() == 0);
-    JSONNumber num2(0.123);                     assert(equals(num2.getFloating(), 0.123));
-    JSONNumber num3(f1);                        assert(equals(num3.getFloating(), f1));
-    JSONNumber num4(1234151245);                assert(num4.getInteger() == 1234151245);
-    JSONNumber num5(ud1);                       assert(num5.getInteger() == ud1);
-    JSONNumber num6(-3514);                     assert(num6.getInteger() == -3514);
-    JSONNumber num7(sd1);                       assert(num7.getInteger() == sd1);
-    JSONNumber num8(num1);                      assert(num8.getInteger() == 0);
-    JSONNumber num9{JSONNumber(-0.14e23)};      assert(equals(num9.getFloating(), -0.14e23));
+    JSONNumber num1;                            assert(num1.getValue<JSONInteger>() == 0);
+    JSONNumber num2(0.123);                     assert(equals(num2.getValue<JSONFloating>(), 0.123));
+    JSONNumber num3(f1);                        assert(equals(num3.getValue<JSONFloating>(), f1));
+    JSONNumber num4(1234151245);                assert(num4.getValue<JSONInteger>() == 1234151245);
+    JSONNumber num5(ud1);                       assert(num5.getValue<JSONInteger>() == ud1);
+    JSONNumber num6(-3514);                     assert(num6.getValue<JSONInteger>() == -3514);
+    JSONNumber num7(sd1);                       assert(num7.getValue<JSONInteger>() == sd1);
+    JSONNumber num8(num1);                      assert(num8.getValue<JSONInteger>() == 0);
+    JSONNumber num9{JSONNumber(-0.14e23)};      assert(equals(num9.getValue<JSONFloating>(), -0.14e23));
 
     // assignment
-    num1 = 5;                                   assert(num1.getInteger() == 5);
-    num1 = -5;                                  assert(num1.getInteger() == -5);
-    num1 = f1;                                  assert(equals(num1.getFloating(), f1));
-    num1 = num5;                                assert(num1.getInteger() == ud1);
-    num1 = JSONNumber{345};                     assert(num1.getInteger() == 345);
+    num1 = 5;                                   assert(num1.getValue<JSONInteger>() == 5);
+    num1 = -5;                                  assert(num1.getValue<JSONInteger>() == -5);
+    num1 = f1;                                  assert(equals(num1.getValue<JSONFloating>(), f1));
+    num1 = num5;                                assert(num1.getValue<JSONInteger>() == ud1);
+    num1 = JSONNumber{345};                     assert(num1.getValue<JSONInteger>() == 345);
 
     // comparison
     assert(num1 == 345);

@@ -1,9 +1,7 @@
 # SimpleJSON
 
-SimpleJSON is a header-only C++ library for parsing and creating JSON objects without dependecies on any libraries besides the C++ standard library.
+SimpleJSON is a header-only C++ library for parsing and creating JSON objects without external dependecies. Requires C++17.
 
-Main features of the library are parsing, manipulating and dumping JSON objects to/from streams.
+Main features of the library are parsing, manipulating and dumping JSON objects to/from streams and files.
 
-JSON objects are represented with class `simpleJSON::JSONObject` and manipulating them is easy and almost JavaScript-like.
-
-Requires C++17
+JSON objects are represented with class `simpleJSON::JSONObject`.

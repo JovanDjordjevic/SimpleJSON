@@ -62,7 +62,7 @@ void testJSONObject() {
         JSONArray arr;
             arr.append(1);
             arr.append("str");
-    JSONObject o{
+    JSONObject o = JSONMap{
             {"key1", "value1"}, 
             {key2, JSONString("value2")}, 
             {std::string("key3"), 234},
@@ -71,13 +71,14 @@ void testJSONObject() {
             {"key6", arr},
             {"key7", JSONArray{1, "str", JSONNull{}}},
             {"key8", obj23},
-            {"key9",  {{"k1", 1}, {"k2", 2}}   }
+            {"key9", JSONMap{{"k1", 1}, {"k2", 2}} },
+            {"key10", JSONMap{{"k3", 3}, {"k4", 4}} }
         };
 
-    assert(o.size() == 9);
+    assert(o.size() == 10);
     assert(o["key9"].size() == 2);
     o.removeField("key1");                                                  
-    assert(o.size() == 8);
+    assert(o.size() == 9);
     assert(o["nonExistantField"].size() == 0);         // NOTE: operator[] will create a default json object if the key does not exist
 
     // assignment
