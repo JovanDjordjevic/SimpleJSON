@@ -15,6 +15,13 @@ void testStreamIO() {
     auto obj1_1 = simpleJSON::parseFromString(obj1Str);
     auto obj1_2 = simpleJSON::parseFromString(obj1Pretty);
     assert(obj1_1 == obj1_2);
+
+    simpleJSON::dumpToFile(obj1, "smallJsonDump.json");
+    auto obj1_3 = simpleJSON::parseFromFile("smallJsonDump.json");
+    assert(obj1 == obj1_3);
+    simpleJSON::dumpToPrettyFile(obj1, "smallJsonPrettyDump.json");
+    auto obj1_4 = simpleJSON::parseFromFile("smallJsonPrettyDump.json");
+    assert(obj1 == obj1_4);
  
     // std::string filePath{"testInputs/mediumJson.json"};
     std::string filePath{"../../tests/testInputs/mediumJson.json"};

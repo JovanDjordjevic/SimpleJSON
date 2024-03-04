@@ -52,8 +52,7 @@ namespace simpleJSON {
     /// @details If you wish to change the underlying type, don't forget to also change how it is parsed (see internal::strToJSONInteger) 
     using JSONInteger = long long int;
 
-    /// @brief Default string used for indentation
-    /// @details This string will be appended once per indent level.
+    /// @brief Default string used for indentation. It will be appended once per indent level
     static const char* defaultIndentString = "\t";
 
     /// @brief Function to parse a json file
@@ -61,21 +60,22 @@ namespace simpleJSON {
     /// @return A JSONObject representing data contained in the file
     inline JSONObject parseFromFile(const std::filesystem::path& fileName);
 
+    /// @brief Function to dump the string representation of a JSONObject to a file
+    inline void dumpToFile(const JSONObject& obj, const std::filesystem::path& fileName);
+
+    /// @brief Function to dump a formatted string representation of a JSONObject to a file
+    inline void dumpToPrettyFile(const JSONObject& obj, const std::filesystem::path& fileName, const std::string& indentString = defaultIndentString);
+
     /// @brief Function to parse a string containing json data
     /// @details Throws JSONException if anything goes wrong
-    /// @return A JSONObject representing data contained in the string
     inline JSONObject parseFromString(const std::string& jsonString);
 
     /// @brief Convenience function to represent a json object as a non-formatted string
-    /// @details Throws JSONException if anything goes wrong
-    /// @return String representation of json object
     inline std::string dumpToString(const JSONObject& obj);
 
     /// @brief Convenience function to represent a json object as an indented string
-    /// @details Throws JSONException if anything goes wrong
     /// @param[in] obj Object to turn into a string
     /// @param[in] indentString What indentation to use (defaults to one tab per indent level)
-    /// @return String representation of json object
     inline std::string dumpToPrettyString(const JSONObject& obj, const std::string& indentString = defaultIndentString);
 
     /// @brief Class to represent various exceptions thrown by library functions
@@ -405,7 +405,16 @@ namespace simpleJSON {
         return internal::beginParseFromStream(stream);
     }
 
-    // void dumpToFile(const char* fileName);
+    inline void dumpToFile(const JSONObject& obj, const std::filesystem::path& fileName) {
+        std::ofstream fileStream(fileName);
+        fileStream << obj.toString() << std::endl;
+    }
+
+    inline void dumpToPrettyFile(const JSONObject& obj, const std::filesystem::path& fileName, const std::string& indentString) {
+        std::string currentIndentation = "";
+        std::ofstream fileStream(fileName);
+        fileStream << obj.toIndentedString(currentIndentation, indentString) << std::endl;
+    }
 
     inline std::string dumpToString(const JSONObject& obj) {
         return obj.toString();
